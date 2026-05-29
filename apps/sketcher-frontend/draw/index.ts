@@ -119,8 +119,45 @@ export function initDraw(canvas:HTMLCanvasElement, roomId: string, socket: WebSo
                 }
 
                 if (tool === "text") {
+                    // FIX: If there's already an active text input, commit & remove it
+                    // immediately before creating a new one. The old blur-based approach
+                    // failed because activeTextInput was changed before the 100ms timeout
+                    // fired, so the old input was never removed (causing the ghost/watermark).
                     if (activeTextInput) {
-                        activeTextInput.blur();
+                        const oldInput = activeTextInput;
+                        activeTextInput = null; // Clear first so blur handler won't double-fire
+
+                        const oldVal = oldInput.value.trim();
+                        if (oldVal) {
+                            const oldX = parseFloat(oldInput.dataset.inputX || "0");
+                            const oldY = parseFloat(oldInput.dataset.inputY || "0");
+                            const oldColor = oldInput.dataset.inputColor || "#ffffff";
+                            const oldSize = parseFloat(oldInput.dataset.inputSize || "2");
+                            const shapeId = Math.random().toString(36).substring(2, 9);
+                            const shape: Shape = {
+                                id: shapeId,
+                                type: "text",
+                                x: oldX,
+                                y: oldY,
+                                text: oldVal,
+                                color: oldColor,
+                                size: oldSize
+                            };
+                            existingShapes.push(shape);
+                            myDrawnShapeIds.push(shapeId);
+                            redoStack = [];
+                            clearCanvas(ctx, existingShapes, canvas);
+                            if (socket.readyState === WebSocket.OPEN) {
+                                socket.send(JSON.stringify({
+                                    type: "chat",
+                                    message: JSON.stringify(shape),
+                                    roomId
+                                }));
+                            }
+                        }
+                        if (oldInput.parentElement) {
+                            oldInput.parentElement.removeChild(oldInput);
+                        }
                     }
 
                     const inputX = e.clientX;
@@ -138,6 +175,12 @@ export function initDraw(canvas:HTMLCanvasElement, roomId: string, socket: WebSo
                     input.style.border = "none";
                     input.style.outline = "none";
                     input.style.color = activeColorVal;
+
+                    // Store creation-time values on the element so we can commit correctly
+                    input.dataset.inputX = String(inputX);
+                    input.dataset.inputY = String(inputY);
+                    input.dataset.inputColor = activeColorVal;
+                    input.dataset.inputSize = String(activeSizeVal);
                     
                     const fontSize = activeSizeVal === 2 ? 14 : activeSizeVal === 6 ? 20 : activeSizeVal === 12 ? 28 : activeSizeVal === 20 ? 40 : 18;
                     input.style.font = `${fontSize}px sans-serif`;
@@ -162,8 +205,8 @@ export function initDraw(canvas:HTMLCanvasElement, roomId: string, socket: WebSo
                                 x: inputX,
                                 y: inputY,
                                 text: val,
-                                color: color,
-                                size: size
+                                color: activeColorVal,
+                                size: activeSizeVal
                             };
                             existingShapes.push(shape);
                             myDrawnShapeIds.push(shapeId);

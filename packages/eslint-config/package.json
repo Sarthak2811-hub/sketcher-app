@@ -3,6 +3,12 @@
   "version": "0.0.0",
   "type": "module",
   "private": true,
+  "scripts": {
+    "build": "echo 'No build needed'",
+    "dev": "echo 'No dev needed'",
+    "check-types": "echo 'No type check needed'",
+    "lint": "echo 'No lint needed'"
+  },
   "exports": {
     "./base": "./base.js",
     "./next-js": "./next.js",

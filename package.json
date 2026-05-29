@@ -1,6 +1,10 @@
 {
   "name": "sketcher",
   "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
@@ -10,11 +14,21 @@
   },
   "devDependencies": {
     "prettier": "^3.7.4",
-    "turbo": "^2.9.6",
+    "prisma": "^5.22.0",
+    "turbo": "2.9.7-canary.13",
     "typescript": "5.9.2"
   },
-  "packageManager": "pnpm@9.0.0",
+  "packageManager": "pnpm@10.18.0",
   "engines": {
     "node": ">=18"
+  },
+  "dependencies": {
+    "zod": "^4.4.1"
+  },
+  "pnpm": {
+    "ignoredBuiltDependencies": [
+      "sharp",
+      "unrs-resolver"
+    ]
   }
 }

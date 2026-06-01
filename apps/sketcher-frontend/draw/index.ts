@@ -35,7 +35,7 @@ export type Shape = ({
 } | {
     type: "eraser",
     points: { x: number; y: number }[];
-}) & { id?: string; color?: string; size?: number };
+}) & { id?: string; color?: string; size?: number; fontSize?: number };
 
 export type ToolMode = "select" | "rect" | "circle" | "arrow" | "triangle" | "pencil" | "text" | "eraser";
 
@@ -63,7 +63,7 @@ function getShapeBoundingBox(shape: Shape) {
         };
     } else if (shape.type === "text") {
         const size = shape.size || 2;
-        const fontSize = size === 2 ? 14 : size === 6 ? 20 : size === 12 ? 28 : size === 20 ? 40 : 18;
+        const fontSize = shape.fontSize || (size === 2 ? 14 : size === 6 ? 20 : size === 12 ? 28 : size === 20 ? 40 : 18);
         const width = shape.text.length * fontSize * 0.6;
         return {
             minX: shape.x,
@@ -163,6 +163,137 @@ function moveShape(shape: Shape, dx: number, dy: number): Shape {
     return shape;
 }
 
+type ResizeHandle = "TL" | "TR" | "BL" | "BR";
+
+function getResizeHandleUnderMouse(mx: number, my: number, shape: Shape): ResizeHandle | null {
+    const box = getShapeBoundingBox(shape);
+    const padding = 6;
+    const clickRadius = 12; // 12px active click zone
+
+    const x1 = box.minX - padding;
+    const y1 = box.minY - padding;
+    const x2 = box.maxX + padding;
+    const y2 = box.minY - padding;
+    const x3 = box.minX - padding;
+    const y3 = box.maxY + padding;
+    const x4 = box.maxX + padding;
+    const y4 = box.maxY + padding;
+
+    const handles = [
+        { name: "TL" as ResizeHandle, x: x1, y: y1 },
+        { name: "TR" as ResizeHandle, x: x2, y: y2 },
+        { name: "BL" as ResizeHandle, x: x3, y: y3 },
+        { name: "BR" as ResizeHandle, x: x4, y: y4 }
+    ];
+
+    for (const h of handles) {
+        const dx = mx - h.x;
+        const dy = my - h.y;
+        if (Math.sqrt(dx * dx + dy * dy) <= clickRadius) {
+            return h.name;
+        }
+    }
+    return null;
+}
+
+function resizeShape(shape: Shape, handle: ResizeHandle, mx: number, my: number, startBox: { minX: number; maxX: number; minY: number; maxY: number }): Shape {
+    if (shape.type === "rect" || shape.type === "triangle") {
+        let newX = shape.x;
+        let newY = shape.y;
+        let newWidth = 0;
+        let newHeight = 0;
+
+        if (shape.type === "rect") {
+            newWidth = shape.width;
+            newHeight = shape.height;
+        } else {
+            newWidth = shape.endX - shape.x;
+            newHeight = shape.endY - shape.y;
+        }
+
+        if (handle === "BR") {
+            newWidth = mx - startBox.minX;
+            newHeight = my - startBox.minY;
+        } else if (handle === "TL") {
+            newX = mx;
+            newY = my;
+            newWidth = startBox.maxX - mx;
+            newHeight = startBox.maxY - my;
+        } else if (handle === "TR") {
+            newY = my;
+            newWidth = mx - startBox.minX;
+            newHeight = startBox.maxY - my;
+        } else if (handle === "BL") {
+            newX = mx;
+            newWidth = startBox.maxX - mx;
+            newHeight = my - startBox.minY;
+        }
+
+        if (shape.type === "rect") {
+            return {
+                ...shape,
+                x: newX,
+                y: newY,
+                width: newWidth,
+                height: newHeight
+            };
+        } else { // triangle
+            return {
+                ...shape,
+                x: newX,
+                y: newY,
+                endX: newX + newWidth,
+                endY: newY + newHeight
+            };
+        }
+    } else if (shape.type === "circle") {
+        const dx = mx - shape.x;
+        const dy = my - shape.y;
+        const radius = Math.max(5, Math.sqrt(dx * dx + dy * dy));
+        return {
+            ...shape,
+            radius
+        };
+    } else if (shape.type === "arrow") {
+        const distStart = Math.sqrt(Math.pow(mx - shape.x, 2) + Math.pow(my - shape.y, 2));
+        const distEnd = Math.sqrt(Math.pow(mx - shape.endX, 2) + Math.pow(my - shape.endY, 2));
+        if (distStart < distEnd) {
+            return {
+                ...shape,
+                x: mx,
+                y: my
+            };
+        } else {
+            return {
+                ...shape,
+                endX: mx,
+                endY: my
+            };
+        }
+    } else if (shape.type === "text") {
+        const size = shape.size || 2;
+        const initialFontSize = shape.fontSize || (size === 2 ? 14 : size === 6 ? 20 : size === 12 ? 28 : size === 20 ? 40 : 18);
+        const originalWidth = shape.text.length * initialFontSize * 0.6;
+        
+        let newWidth = originalWidth;
+        if (handle === "BR" || handle === "TR") {
+            newWidth = mx - startBox.minX;
+        } else {
+            newWidth = startBox.maxX - mx;
+        }
+        
+        const scale = newWidth / originalWidth;
+        const fontSize = Math.max(8, Math.min(200, Math.round(initialFontSize * scale)));
+        
+        return {
+            ...shape,
+            x: handle === "TL" || handle === "BL" ? mx : shape.x,
+            fontSize
+        };
+    }
+    return shape;
+}
+
 export function initDraw(canvas:HTMLCanvasElement, roomId: string, socket: WebSocket, getActiveTool: () => ToolMode, getActiveColor: () => string | null, getActiveSize: () => number | null, onRequireSelection: () => void){
             const ctx = canvas.getContext("2d");
             if (!ctx) {
@@ -186,6 +317,11 @@ export function initDraw(canvas:HTMLCanvasElement, roomId: string, socket: WebSo
             let dragStartX = 0;
             let dragStartY = 0;
             let originalShapeCopy: Shape | null = null;
+
+            let isResizing = false;
+            let activeResizeHandle: ResizeHandle | null = null;
+            let originalShapeBeforeResize: Shape | null = null;
+            let resizeStartBox: { minX: number; maxX: number; minY: number; maxY: number } | null = null;
 
             // Fetch shapes in the background asynchronously
             getExistingShapes(roomId).then((shapes) => {
@@ -256,6 +392,18 @@ export function initDraw(canvas:HTMLCanvasElement, roomId: string, socket: WebSo
                 if (tool === "select") {
                     const clickX = e.clientX;
                     const clickY = e.clientY;
+
+                    // If a shape is already selected, check if click is on a resize handle first
+                    if (selectedShape) {
+                        const handle = getResizeHandleUnderMouse(clickX, clickY, selectedShape);
+                        if (handle) {
+                            isResizing = true;
+                            activeResizeHandle = handle;
+                            originalShapeBeforeResize = JSON.parse(JSON.stringify(selectedShape));
+                            resizeStartBox = getShapeBoundingBox(selectedShape);
+                            return;
+                        }
+                    }
                     
                     let found: Shape | null = null;
                     for (let i = existingShapes.length - 1; i >= 0; i--) {
@@ -435,6 +583,30 @@ export function initDraw(canvas:HTMLCanvasElement, roomId: string, socket: WebSo
             const handleMouseUp = (e: MouseEvent) => {
                 let tool = getActiveTool();
                 if (tool === "select") {
+                    if (isResizing && selectedShape && originalShapeBeforeResize) {
+                        isResizing = false;
+                        activeResizeHandle = null;
+                        originalShapeBeforeResize = null;
+                        resizeStartBox = null;
+
+                        const shapeId = selectedShape.id;
+                        if (shapeId) {
+                            if (socket.readyState === WebSocket.OPEN) {
+                                socket.send(JSON.stringify({
+                                    type: "delete_shape",
+                                    shapeId: shapeId,
+                                    roomId
+                                }));
+                                socket.send(JSON.stringify({
+                                    type: "chat",
+                                    message: JSON.stringify(selectedShape),
+                                    roomId
+                                }));
+                            }
+                        }
+                        return;
+                    }
+
                     if (isDragging && selectedShape && originalShapeCopy) {
                         isDragging = false;
                         const currentX = e.clientX;
@@ -566,10 +738,26 @@ export function initDraw(canvas:HTMLCanvasElement, roomId: string, socket: WebSo
                 const tool = getActiveTool();
                 const size = getActiveSize() || 2;
 
+                if (tool !== "select") {
+                    canvas.style.cursor = "default";
+                }
+
                 if (tool === "select") {
+                    const currentX = e.clientX;
+                    const currentY = e.clientY;
+
+                    if (isResizing && selectedShape && originalShapeBeforeResize && resizeStartBox && activeResizeHandle) {
+                        const shapeIndex = existingShapes.findIndex(s => s.id === selectedShape!.id);
+                        if (shapeIndex !== -1) {
+                            const updatedShape = resizeShape(originalShapeBeforeResize, activeResizeHandle, currentX, currentY, resizeStartBox);
+                            existingShapes[shapeIndex] = updatedShape;
+                            selectedShape = updatedShape;
+                            clearCanvas(ctx, existingShapes, canvas, selectedShape);
+                        }
+                        return;
+                    }
+
                     if (isDragging && selectedShape && originalShapeCopy) {
-                        const currentX = e.clientX;
-                        const currentY = e.clientY;
                         const dx = currentX - dragStartX;
                         const dy = currentY - dragStartY;
 
@@ -579,6 +767,41 @@ export function initDraw(canvas:HTMLCanvasElement, roomId: string, socket: WebSo
                             existingShapes[shapeIndex] = updatedShape;
                             selectedShape = updatedShape;
                             clearCanvas(ctx, existingShapes, canvas, selectedShape);
+                        }
+                        return;
+                    }
+
+                    // Update cursor style on hover when not dragging or resizing
+                    if (!isDragging && !isResizing) {
+                        if (selectedShape) {
+                            const handle = getResizeHandleUnderMouse(currentX, currentY, selectedShape);
+                            if (handle) {
+                                if (handle === "TL" || handle === "BR") {
+                                    canvas.style.cursor = "nwse-resize";
+                                } else {
+                                    canvas.style.cursor = "nesw-resize";
+                                }
+                                return;
+                            }
+
+                            if (isPointInShape(currentX, currentY, selectedShape)) {
+                                canvas.style.cursor = "move";
+                                return;
+                            }
+                        }
+
+                        let hoverShape = false;
+                        for (let i = existingShapes.length - 1; i >= 0; i--) {
+                            if (isPointInShape(currentX, currentY, existingShapes[i])) {
+                                hoverShape = true;
+                                break;
+                            }
+                        }
+
+                        if (hoverShape) {
+                            canvas.style.cursor = "pointer";
+                        } else {
+                            canvas.style.cursor = "default";
                         }
                     }
                     return;
@@ -813,7 +1036,7 @@ function drawShape(ctx: CanvasRenderingContext2D, shape: Shape) {
     } else if (shape.type === "text") {
         ctx.fillStyle = shape.color || "rgba(255,255,255)";
         const size = shape.size || 2;
-        const fontSize = size === 2 ? 14 : size === 6 ? 20 : size === 12 ? 28 : size === 20 ? 40 : 18;
+        const fontSize = shape.fontSize || (size === 2 ? 14 : size === 6 ? 20 : size === 12 ? 28 : size === 20 ? 40 : 18);
         ctx.font = `${fontSize}px sans-serif`;
         ctx.textBaseline = "top";
         ctx.fillText(shape.text, shape.x, shape.y);

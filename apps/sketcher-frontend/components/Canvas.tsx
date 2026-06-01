@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { initDraw, ToolMode } from "../draw/index";
-import { Square, Circle, ArrowUpRight, Triangle as TriangleIcon, Pencil, Undo2, Redo2, Trash2, Type, Eraser, Download, Sparkles, Lock } from "lucide-react";
+import { Square, Circle, ArrowUpRight, Triangle as TriangleIcon, Pencil, Undo2, Redo2, Trash2, Type, Eraser, Download, Sparkles, Lock, MousePointer } from "lucide-react";
 
 export function Canvas({ roomId, socket }: { roomId: string; socket: WebSocket }) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    const [activeTool, setActiveTool] = useState<ToolMode>("rect");
-    const activeToolRef = useRef<ToolMode>("rect");
+    const [activeTool, setActiveTool] = useState<ToolMode>("select");
+    const activeToolRef = useRef<ToolMode>("select");
     activeToolRef.current = activeTool;
 
     const [activeColor, setActiveColor] = useState<string | null>(null);
@@ -207,6 +207,7 @@ export function Canvas({ roomId, socket }: { roomId: string; socket: WebSocket }
     }, [roomId, socket]); // canvasRef intentionally omitted — refs are stable
 
     const tools = [
+        { id: "select" as ToolMode, icon: MousePointer, label: "Select" },
         { id: "pencil" as ToolMode, icon: Pencil, label: "Pencil" },
         { id: "rect" as ToolMode, icon: Square, label: "Rectangle" },
         { id: "circle" as ToolMode, icon: Circle, label: "Circle" },

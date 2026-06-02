@@ -1,0 +1,65 @@
+services:
+  # Local Postgres Database Container
+  postgres:
+    image: postgres:16-alpine
+    container_name: sketcher-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: sketcher
+      POSTGRES_PASSWORD: sketcher_password
+      POSTGRES_DB: sketcherdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # HTTP Express Backend
+  http-backend:
+    container_name: sketcher-http
+    build:
+      context: .
+      dockerfile: apps/http-backend/Dockerfile
+    ports:
+      - "3002:3002"
+    environment:
+      DATABASE_URL: postgresql://sketcher:sketcher_password@postgres:5432/sketcherdb
+      JWT_SECRET: my_super_secret_jwt_key_123
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+  # WebSocket Backend
+  ws-backend:
+    container_name: sketcher-ws
+    build:
+      context: .
+      dockerfile: apps/ws-backend/Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      DATABASE_URL: postgresql://sketcher:sketcher_password@postgres:5432/sketcherdb
+      JWT_SECRET: my_super_secret_jwt_key_123
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+  # Next.js Frontend
+  frontend:
+    container_name: sketcher-frontend
+    build:
+      context: .
+      dockerfile: apps/sketcher-frontend/Dockerfile
+      args:
+        NEXT_PUBLIC_HTTP_BACKEND: http://localhost:3002
+        NEXT_PUBLIC_WS_URL: ws://localhost:8080
+    ports:
+      - "3003:3003"
+    environment:
+      BACKEND_URL: http://http-backend:3002
+    depends_on:
+      - http-backend
+      - ws-backend
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

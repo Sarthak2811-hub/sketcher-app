@@ -44,6 +44,11 @@ The codebase is a high-performance **Turborepo monorepo** built with **Next.js**
 - Export the current canvas as **PNG**, **SVG**, or **JSON**
 - Premium paywall interface included
 
+### 🖥️ Redesigned User Interface & Landing Hubs
+- **Lobby Landing Page (Port 3000)**: Completely redesigned with a premium dark-mode aesthetic, glowing background shaders, and floating animated hand-drawn SVGs. Single-action Room ID entering directly redirects to the main drawing canvas. Includes a dynamic, collapsible monorepo architecture info box.
+- **Frontend App Features Grid (Port 3003)**: Features a beautiful 3-column flagship grid displaying six major project features (Infinite Canvas, Real-Time Collaboration, One-Click Sharing, Freehand Drawing, Export Options, and Blazing Fast performance) with customized Lucide icons.
+- **Clean Layout**: Cleaned up the landing footer layout by removing unused placeholder links (Terms, Privacy, Blog, Changelog, Twitter) to focus on the project's single source of truth.
+
 ---
 
 ## 🛠️ Technology Stack

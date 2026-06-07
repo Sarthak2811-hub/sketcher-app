@@ -484,20 +484,14 @@ export function Canvas({ roomId, socket }: { roomId: string; socket: WebSocket }
                     onClick={handleShare}
                     title="Copy Room Link"
                     className={`
-                        flex items-center gap-2 px-3 py-2 h-10 rounded-xl font-semibold text-[10px] uppercase tracking-wider
-                        transition-all duration-200 ease-out cursor-pointer select-none hover:scale-105 active:scale-95
-                        ${
-                            copied
-                                ? "bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.3)]"
-                                : "bg-indigo-600/20 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-600/30 hover:border-indigo-400/50"
+                        flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-200 ease-out cursor-pointer hover:scale-105 active:scale-95
+                        ${copied
+                            ? "text-emerald-400 bg-emerald-500/10 shadow-[0_0_10px_rgba(52,211,153,0.25)]"
+                            : "text-white/50 hover:text-white hover:bg-white/5"
                         }
                     `}
                 >
-                    {copied ? (
-                        <><Check size={14} strokeWidth={2.5} /><span>Copied!</span></>
-                    ) : (
-                        <><Link2 size={14} strokeWidth={2.2} /><span>Share</span></>
-                    )}
+                    {copied ? <Check size={18} strokeWidth={2.5} /> : <Link2 size={18} strokeWidth={2.2} />}
                 </button>
             </div>
 

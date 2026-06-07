@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 export default function Home() {
   const [roomId, setRoomId] = useState("");
   const [isJoinHovered, setIsJoinHovered] = useState(false);
-  const [isChatHovered, setIsChatHovered] = useState(false);
   const [isCreateHovered, setIsCreateHovered] = useState(false);
   const [showArchInfo, setShowArchInfo] = useState(false);
   const router = useRouter();
@@ -15,13 +14,6 @@ export default function Home() {
     const id = targetId || roomId.trim();
     if (id) {
       window.location.href = `http://localhost:3003/canvas/${encodeURIComponent(id.toLowerCase())}`;
-    }
-  };
-
-  // Secondary Action: Join Chat Room on Port 3000
-  const handleJoinChat = () => {
-    if (roomId.trim()) {
-      router.push(`/room/${encodeURIComponent(roomId.trim().toLowerCase())}`);
     }
   };
 
@@ -410,85 +402,44 @@ export default function Home() {
 
           {/* Action Row for the Typed Room ID */}
           <div style={{
-            display: "grid",
-            gridTemplateColumns: "1fr",
-            gap: "12px",
             width: "100%",
           }}>
-            <style>{`
-              @media (min-width: 480px) {
-                .button-grid {
-                  grid-template-columns: 1.2fr 0.8fr !important;
-                }
-              }
-            `}</style>
-            <div className="button-grid" style={{ display: "grid", gridTemplateColumns: "1fr", gap: "12px", width: "100%" }}>
-              {/* Main Button: Canvas App */}
-              <button
-                onClick={() => handleJoinCanvas()}
-                onMouseEnter={() => setIsJoinHovered(true)}
-                onMouseLeave={() => setIsJoinHovered(false)}
-                disabled={!roomId.trim()}
-                style={{
-                  padding: "16px",
-                  borderRadius: "14px",
-                  border: "none",
-                  background: !roomId.trim() 
-                    ? "rgba(255, 255, 255, 0.03)" 
-                    : isJoinHovered
-                      ? "linear-gradient(135deg, #4f46e5, #7c3aed)"
-                      : "linear-gradient(135deg, #6366f1, #8b5cf6)",
-                  color: !roomId.trim() ? "rgba(255,255,255,0.25)" : "#fff",
-                  fontWeight: 600,
-                  fontSize: "14px",
-                  cursor: roomId.trim() ? "pointer" : "not-allowed",
-                  fontFamily: "inherit",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "8px",
-                  boxShadow: roomId.trim() && isJoinHovered
-                    ? "0 10px 25px rgba(99,102,241,0.45)"
-                    : "none",
-                  transform: roomId.trim() && isJoinHovered ? "translateY(-1px)" : "translateY(0)",
-                  transition: "all 0.2s ease",
-                }}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-                </svg>
-                Draw on Canvas 🎨
-              </button>
-
-              {/* Secondary Button: Text Chat Room */}
-              <button
-                onClick={handleJoinChat}
-                onMouseEnter={() => setIsChatHovered(true)}
-                onMouseLeave={() => setIsChatHovered(false)}
-                disabled={!roomId.trim()}
-                style={{
-                  padding: "16px",
-                  borderRadius: "14px",
-                  border: "1px solid rgba(255, 255, 255, 0.1)",
-                  background: isChatHovered ? "rgba(255, 255, 255, 0.07)" : "transparent",
-                  color: !roomId.trim() ? "rgba(255,255,255,0.2)" : "rgba(255, 255, 255, 0.75)",
-                  fontWeight: 500,
-                  fontSize: "14px",
-                  cursor: roomId.trim() ? "pointer" : "not-allowed",
-                  fontFamily: "inherit",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "6px",
-                  transition: "all 0.2s ease",
-                }}
-              >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-                </svg>
-                Join Chat 💬
-              </button>
-            </div>
+            <button
+              onClick={() => handleJoinCanvas()}
+              onMouseEnter={() => setIsJoinHovered(true)}
+              onMouseLeave={() => setIsJoinHovered(false)}
+              disabled={!roomId.trim()}
+              style={{
+                width: "100%",
+                padding: "16px",
+                borderRadius: "14px",
+                border: "none",
+                background: !roomId.trim() 
+                  ? "rgba(255, 255, 255, 0.03)" 
+                  : isJoinHovered
+                    ? "linear-gradient(135deg, #4f46e5, #7c3aed)"
+                    : "linear-gradient(135deg, #6366f1, #8b5cf6)",
+                color: !roomId.trim() ? "rgba(255,255,255,0.25)" : "#fff",
+                fontWeight: 600,
+                fontSize: "14px",
+                cursor: roomId.trim() ? "pointer" : "not-allowed",
+                fontFamily: "inherit",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "8px",
+                boxShadow: roomId.trim() && isJoinHovered
+                  ? "0 10px 25px rgba(99,102,241,0.45)"
+                  : "none",
+                transform: roomId.trim() && isJoinHovered ? "translateY(-1px)" : "translateY(0)",
+                transition: "all 0.2s ease",
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+              </svg>
+              Draw on Canvas 🎨
+            </button>
           </div>
 
           <div style={{

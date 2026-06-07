@@ -1,159 +1,115 @@
-# Turborepo starter
+# 🎨 Sketcher — Collaborative Whiteboard
 
-This Turborepo starter is maintained by the Turborepo core team.
+**Sketcher** is a premium, real-time collaborative whiteboard and diagramming application. It features a fully infinite drawing canvas with smooth zoom and pan interactions, live multiplayer editing synced over WebSockets, shape creation tools, and dynamic visual grids.
 
-## Using this example
+The codebase is organized as a high-performance **Turborepo monorepo** using **Next.js**, **Node.js**, **WebSockets**, and **Prisma**.
 
-Run the following command:
+---
 
-```sh
-npx create-turbo@latest
+## ✨ Features
+
+- **Infinite Canvas**: Scroll, pan, and zoom infinitely in any direction.
+  - *Panning*: Grab and drag using the **Hand tool**, hold **Spacebar + Left Click**, or drag using the **Middle Mouse Button**.
+  - *Zooming*: Magnify up to `2000%` or down to `10%` smoothly relative to your cursor using your scroll wheel or the floating bottom-left controls.
+- **Dynamic Dot Grid**: An elegant, tiled grid background that scales and pans natively with zero latency.
+- **Multiplayer Collaboration**: Real-time sync of shapes, pencil drawings, texts, and actions using standard WebSockets.
+- **Rich Editor Controls**:
+  - Draw rectangles, circles, arrows, triangles, and hand-drawn paths (pencil).
+  - Erase paths using a custom adjustable eraser brush.
+  - Enter, scale, and adjust canvas text overlay elements.
+  - Select, drag, and resize existing canvas elements with interactive bounding handles.
+- **Export Capabilities**: Clean downloads of current diagrams into PNG, SVG, or JSON formats (Premium tier paywall interface enabled).
+
+---
+
+## 🛠️ Technology Stack
+
+| Component | Technology | Description |
+| :--- | :--- | :--- |
+| **Monorepo Manager** | [Turborepo](https://turbo.build/) | Orchestrates builds and package dependencies. |
+| **Frontends** | [Next.js](https://nextjs.org/) | Multi-app React frontends (`sketcher-frontend`, `web`, `docs`). |
+| **HTTP API** | [Express](https://expressjs.com/) | Powers rooms, authentication, and REST queries. |
+| **WebSockets** | [ws](https://github.com/websockets/ws) | Handles real-time client-to-client updates. |
+| **Database ORM** | [Prisma](https://www.prisma.io/) | Schema management and type-safe DB client generation. |
+| **Database** | PostgreSQL | Local Docker container or cloud database (Neon Cloud). |
+| **Containerization** | Docker | Dockerfiles and docker-compose setups. |
+
+---
+
+## 📁 Repository Structure
+
+```
+├── apps/
+│   ├── sketcher-frontend/   # Main Next.js visual drawing board app (Port 3003)
+│   ├── web/                 # Landing site and room directory app (Port 3000)
+│   ├── docs/                # Developer guide and docs app (Port 3001)
+│   ├── http-backend/        # REST Express server (Port 3002)
+│   └── ws-backend/          # WebSocket connection gateway server (Port 8080)
+├── packages/
+│   ├── db/                  # Shared Prisma ORM client database logic
+│   ├── ui/                  # Shared UI component library stub
+│   ├── typescript-config/   # Shared typescript tsconfig configs
+│   └── eslint-config/       # Lint rules configuration
 ```
 
-## What's inside?
+---
 
-This Turborepo includes the following packages/apps:
+## 🚀 Getting Started
 
-### Apps and Packages
+### 1. Prerequisites
+- [Node.js](https://nodejs.org/) (v18+)
+- [pnpm](https://pnpm.io/) (v10+)
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (required to run PostgreSQL locally)
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+### 2. Configure Environment Variables
+You need a `.env` file containing the `DATABASE_URL` string in the following locations:
+- Root directory (`/`)
+- `/packages/db/`
+- `/apps/http-backend/`
+- `/apps/ws-backend/`
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
-
-### Utilities
-
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo build
+#### To use Neon Cloud Postgres (Default):
+```env
+DATABASE_URL="postgresql://neondb_owner:...@ep-little-recipe-...neon.tech/neondb?sslmode=require"
 ```
 
-Without global `turbo`, use your package manager:
-
-```sh
-cd my-turborepo
-npx turbo build
-pnpm dlx turbo build
-pnpm exec turbo build
+#### To run PostgreSQL locally in Docker:
+```env
+DATABASE_URL="postgresql://sketcher:sketcher_password@localhost:5433/sketcherdb"
 ```
 
-You can build a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo build --filter=docs
+### 3. Initialize & Install Dependencies
+Run the installation command in the root directory:
+```bash
+pnpm install
 ```
 
-Without global `turbo`:
-
-```sh
-npx turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
+### 4. Setup Database Tables
+Sync the Prisma schema to the active database (Neon Cloud or local Docker):
+```bash
+pnpm --filter=@repo/db run build
+npx prisma db push
 ```
 
-### Develop
-
-To develop all apps and packages, run the following command:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo dev
+### 5. Start Development Servers
+Run the dev task to start frontends, APIs, and WebSockets concurrently:
+```bash
+pnpm run dev
 ```
 
-Without global `turbo`, use your package manager:
+---
 
-```sh
-cd my-turborepo
-npx turbo dev
-pnpm exec turbo dev
-pnpm exec turbo dev
-```
+## 🐳 Docker Deployment
 
-You can develop a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+The application is fully containerized. To run the entire stack inside Docker:
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
+1. **Start local database only** (useful if running apps natively on host):
+   ```bash
+   docker compose up -d postgres
+   ```
 
-```sh
-turbo dev --filter=web
-```
-
-Without global `turbo`:
-
-```sh
-npx turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-```
-
-### Remote Caching
-
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo login
-```
-
-Without global `turbo`, use your package manager:
-
-```sh
-cd my-turborepo
-npx turbo login
-pnpm exec turbo login
-pnpm exec turbo login
-```
-
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo link
-```
-
-Without global `turbo`:
-
-```sh
-npx turbo link
-pnpm exec turbo link
-pnpm exec turbo link
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.dev/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.dev/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.dev/docs/reference/configuration)
-- [CLI Usage](https://turborepo.dev/docs/reference/command-line-reference)
+2. **Start the entire application stack** (frontend, backend, websockets, database):
+   ```bash
+   docker compose up --build
+   ```
+   Open `http://localhost:3003` to start sketching!

@@ -1,24 +1,48 @@
-# 🎨 Sketcher — Collaborative Whiteboard
+# 🎨 Sketcher — Real-Time Collaborative Whiteboard
 
-**Sketcher** is a premium, real-time collaborative whiteboard and diagramming application. It features a fully infinite drawing canvas with smooth zoom and pan interactions, live multiplayer editing synced over WebSockets, shape creation tools, and dynamic visual grids.
+**Sketcher** is a premium, real-time collaborative whiteboard and diagramming tool. Draw together with others on a fully infinite canvas with smooth zoom and pan, live WebSocket sync, rich shape tools, undo/redo, and one-click room sharing.
 
-The codebase is organized as a high-performance **Turborepo monorepo** using **Next.js**, **Node.js**, **WebSockets**, and **Prisma**.
+The codebase is a high-performance **Turborepo monorepo** built with **Next.js**, **Node.js**, **WebSockets**, and **Prisma ORM**.
 
 ---
 
 ## ✨ Features
 
-- **Infinite Canvas**: Scroll, pan, and zoom infinitely in any direction.
-  - *Panning*: Grab and drag using the **Hand tool**, hold **Spacebar + Left Click**, or drag using the **Middle Mouse Button**.
-  - *Zooming*: Magnify up to `2000%` or down to `10%` smoothly relative to your cursor using your scroll wheel or the floating bottom-left controls.
-- **Dynamic Dot Grid**: An elegant, tiled grid background that scales and pans natively with zero latency.
-- **Multiplayer Collaboration**: Real-time sync of shapes, pencil drawings, texts, and actions using standard WebSockets.
-- **Rich Editor Controls**:
-  - Draw rectangles, circles, arrows, triangles, and hand-drawn paths (pencil).
-  - Erase paths using a custom adjustable eraser brush.
-  - Enter, scale, and adjust canvas text overlay elements.
-  - Select, drag, and resize existing canvas elements with interactive bounding handles.
-- **Export Capabilities**: Clean downloads of current diagrams into PNG, SVG, or JSON formats (Premium tier paywall interface enabled).
+### 🖼️ Infinite Canvas
+- **Pan**: Drag with the **Hand tool**, hold **Spacebar + Left Click**, or use the **Middle Mouse Button**.
+- **Zoom**: Scroll wheel or bottom-left zoom controls — smoothly scales from `10%` to `2000%` relative to your cursor position.
+- **Dynamic Dot Grid**: Tiled dot grid that scales and pans natively with zero latency.
+- **Reset View**: One-click recenter button in the bottom-left controls.
+
+### 🎨 Drawing Tools
+| Tool | Description |
+| :--- | :--- |
+| ✏️ Pencil | Freehand drawing with smooth strokes |
+| ▭ Rectangle | Draw axis-aligned rectangles |
+| ○ Circle | Draw circles from center point |
+| → Arrow | Draw directional arrows with arrowheads |
+| △ Triangle | Draw filled outline triangles |
+| T Text | Place and edit text labels on the canvas |
+| ◌ Eraser | Custom adjustable eraser brush |
+| ↖ Select | Select, drag, and resize any shape with bounding handles |
+| ✋ Pan | Hand tool to pan the canvas |
+
+### 🎨 Styling
+- **8 colors**: White, Red, Orange, Yellow, Green, Blue, Purple, Pink
+- **4 stroke sizes**: Thin (2px), Medium (6px), Thick (12px), Extra Thick (20px)
+
+### 👥 Multiplayer Collaboration
+- Real-time sync of all drawing actions over standard **WebSockets**
+- Each room is isolated — only users in the same room share a canvas
+- **Share Room**: One-click share button (🔗) copies the room URL to clipboard
+
+### ↩️ History
+- **Undo**: Reverse your last drawn shape
+- **Redo**: Re-apply a reversed action
+
+### 📤 Export (Premium)
+- Export the current canvas as **PNG**, **SVG**, or **JSON**
+- Premium paywall interface included
 
 ---
 
@@ -26,90 +50,175 @@ The codebase is organized as a high-performance **Turborepo monorepo** using **N
 
 | Component | Technology | Description |
 | :--- | :--- | :--- |
-| **Monorepo Manager** | [Turborepo](https://turbo.build/) | Orchestrates builds and package dependencies. |
-| **Frontends** | [Next.js](https://nextjs.org/) | Multi-app React frontends (`sketcher-frontend`, `web`, `docs`). |
-| **HTTP API** | [Express](https://expressjs.com/) | Powers rooms, authentication, and REST queries. |
-| **WebSockets** | [ws](https://github.com/websockets/ws) | Handles real-time client-to-client updates. |
-| **Database ORM** | [Prisma](https://www.prisma.io/) | Schema management and type-safe DB client generation. |
-| **Database** | PostgreSQL | Local Docker container or cloud database (Neon Cloud). |
-| **Containerization** | Docker | Dockerfiles and docker-compose setups. |
+| **Monorepo** | [Turborepo](https://turbo.build/) | Orchestrates builds, caching, and package dependencies |
+| **Frontend** | [Next.js 15+](https://nextjs.org/) | `sketcher-frontend`, `web`, `docs` apps |
+| **HTTP API** | [Express](https://expressjs.com/) | Room creation, auth (signup/signin), REST endpoints |
+| **Real-Time** | [ws](https://github.com/websockets/ws) | WebSocket server for live collaborative updates |
+| **Auth** | [JWT](https://jwt.io/) | JSON Web Token based authentication |
+| **ORM** | [Prisma](https://www.prisma.io/) | Type-safe database client and schema migrations |
+| **Database** | PostgreSQL | Neon Cloud (default) or local Docker |
+| **Containers** | Docker + Compose | Full stack containerization |
 
 ---
 
 ## 📁 Repository Structure
 
 ```
+sketcher-app/
 ├── apps/
-│   ├── sketcher-frontend/   # Main Next.js visual drawing board app (Port 3003)
-│   ├── web/                 # Landing site and room directory app (Port 3000)
-│   ├── docs/                # Developer guide and docs app (Port 3001)
-│   ├── http-backend/        # REST Express server (Port 3002)
-│   └── ws-backend/          # WebSocket connection gateway server (Port 8080)
+│   ├── sketcher-frontend/   # Main drawing canvas app       → Port 3003
+│   ├── web/                 # Landing page & room lobby     → Port 3000
+│   ├── docs/                # Developer documentation       → Port 3001
+│   ├── http-backend/        # REST API (rooms, auth)        → Port 3002
+│   └── ws-backend/          # WebSocket gateway server      → Port 8080
 ├── packages/
-│   ├── db/                  # Shared Prisma ORM client database logic
-│   ├── ui/                  # Shared UI component library stub
-│   ├── typescript-config/   # Shared typescript tsconfig configs
-│   └── eslint-config/       # Lint rules configuration
+│   ├── db/                  # Prisma schema + shared DB client
+│   ├── ui/                  # Shared UI components
+│   ├── typescript-config/   # Shared tsconfig settings
+│   └── eslint-config/       # Shared lint rules
+├── docker-compose.yml       # Full stack Docker orchestration
+└── turbo.json               # Turborepo pipeline config
 ```
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Getting Started (Local Development)
 
-### 1. Prerequisites
-- [Node.js](https://nodejs.org/) (v18+)
-- [pnpm](https://pnpm.io/) (v10+)
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (required to run PostgreSQL locally)
+### Prerequisites
+- [Node.js](https://nodejs.org/) v18+
+- [pnpm](https://pnpm.io/) v10+
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) *(only if using local PostgreSQL)*
 
-### 2. Configure Environment Variables
-You need a `.env` file containing the `DATABASE_URL` string in the following locations:
-- Root directory (`/`)
-- `/packages/db/`
-- `/apps/http-backend/`
-- `/apps/ws-backend/`
-
-#### To use Neon Cloud Postgres (Default):
-```env
-DATABASE_URL="postgresql://neondb_owner:...@ep-little-recipe-...neon.tech/neondb?sslmode=require"
+### 1. Clone the Repository
+```bash
+git clone https://github.com/Sarthak2811-hub/sketcher-app.git
+cd sketcher-app
 ```
 
-#### To run PostgreSQL locally in Docker:
-```env
-DATABASE_URL="postgresql://sketcher:sketcher_password@localhost:5433/sketcherdb"
-```
-
-### 3. Initialize & Install Dependencies
-Run the installation command in the root directory:
+### 2. Install Dependencies
 ```bash
 pnpm install
 ```
 
-### 4. Setup Database Tables
-Sync the Prisma schema to the active database (Neon Cloud or local Docker):
-```bash
-pnpm --filter=@repo/db run build
-npx prisma db push
+### 3. Configure Environment Variables
+
+Create `.env` files with `DATABASE_URL` in these locations:
+- `/` (root)
+- `/packages/db/`
+- `/apps/http-backend/`
+- `/apps/ws-backend/`
+
+**Option A — Neon Cloud Postgres (recommended, no Docker needed):**
+```env
+DATABASE_URL="postgresql://neondb_owner:<password>@<host>.neon.tech/neondb?sslmode=require"
 ```
 
-### 5. Start Development Servers
-Run the dev task to start frontends, APIs, and WebSockets concurrently:
+**Option B — Local Docker Postgres:**
+```env
+DATABASE_URL="postgresql://sketcher:sketcher_password@localhost:5433/sketcherdb"
+```
+Then start the database container:
+```bash
+docker compose up -d postgres
+```
+
+### 4. Sync Database Schema
+```bash
+cd packages/db
+npx prisma db push
+cd ../..
+```
+
+### 5. Run Development Servers
 ```bash
 pnpm run dev
+```
+
+| App | URL |
+| :--- | :--- |
+| 🎨 Sketcher Canvas | http://localhost:3003 |
+| 🌐 Web / Lobby | http://localhost:3000 |
+| 📖 Docs | http://localhost:3001 |
+| ⚙️ HTTP API | http://localhost:3002 |
+| 🔌 WebSocket | ws://localhost:8080 |
+
+---
+
+## 🏭 Production Build
+
+Build all apps:
+```bash
+pnpm run build
+```
+
+Start production servers:
+```bash
+pnpm run start
 ```
 
 ---
 
 ## 🐳 Docker Deployment
 
-The application is fully containerized. To run the entire stack inside Docker:
+Run the entire stack (frontend + backends + database) in containers:
 
-1. **Start local database only** (useful if running apps natively on host):
-   ```bash
-   docker compose up -d postgres
-   ```
+```bash
+docker compose up --build
+```
 
-2. **Start the entire application stack** (frontend, backend, websockets, database):
-   ```bash
-   docker compose up --build
-   ```
-   Open `http://localhost:3003` to start sketching!
+Open **http://localhost:3003** to start sketching!
+
+To run only the database container (and run apps natively):
+```bash
+docker compose up -d postgres
+```
+
+---
+
+## 📡 API Overview
+
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `POST` | `/signup` | Register a new user account |
+| `POST` | `/signin` | Authenticate and receive a JWT token |
+| `POST` | `/room` | Create a new collaborative room |
+| `GET` | `/room/:slug` | Fetch room details by slug |
+| `GET` | `/chats/:roomId` | Fetch all persisted shapes for a room |
+
+---
+
+## 🔌 WebSocket Events
+
+| Event | Direction | Description |
+| :--- | :--- | :--- |
+| `join` | Client → Server | Join a room by roomId |
+| `draw` | Client → Server | Broadcast a new shape to all room members |
+| `delete_shape` | Client → Server | Broadcast a shape deletion (undo) |
+| `clear` | Client → Server | Clear all shapes in the room |
+| `draw` | Server → Client | Receive a new shape from another user |
+
+---
+
+## 🗂️ Database Schema
+
+```prisma
+model User  { id, email, password, name, rooms[] }
+model Room  { id, slug, adminId, createdAt, messages[] }
+model Chat  { id, roomId, userId, message, createdAt }
+```
+
+---
+
+## 🤝 Contributing
+
+1. Fork the repo
+2. Create a feature branch: `git checkout -b feature/your-feature`
+3. Commit your changes: `git commit -m "feat: your feature"`
+4. Push to GitHub: `git push origin feature/your-feature`
+5. Open a Pull Request
+
+---
+
+## 📄 License
+
+MIT License — feel free to use, modify, and distribute.

@@ -18,6 +18,7 @@ import {
   Image,
   Layers,
   Sparkles,
+  Infinity,
 } from 'lucide-react';
 
 function App() {
@@ -221,9 +222,9 @@ function App() {
 
           <div className="grid md:grid-cols-3 gap-6">
             {[
-              { icon: Pencil, title: 'Freehand Drawing', desc: 'Draw naturally with a stylus or mouse. Smart shape recognition converts rough sketches into clean geometry.', color: 'sky' },
-              { icon: Download, title: 'Export Anywhere', desc: 'Export to PNG, SVG, or JSON. Drop your diagrams into any doc or presentation.', color: 'sky' },
-              { icon: Zap, title: 'Blazing Fast', desc: 'Built on a performant rendering engine. Handles thousands of elements without breaking a sweat.', color: 'blue' },
+              { icon: Infinity, title: 'Infinite Canvas', desc: 'Scroll to zoom, pan to explore. An endless drawing board that expands in every direction with your ideas.', color: 'sky' },
+              { icon: Users, title: 'Real-Time Collaboration', desc: 'Draw with your team live. Share the URL and watch changes sync instantly with zero latency via WebSockets.', color: 'sky' },
+              { icon: Share2, title: 'One-Click Sharing', desc: 'Share your workspace instantly. One click copies the direct room URL to your clipboard for instant collaboration.', color: 'blue' },
             ].map(({ icon: Icon, title, desc }) => (
               <div
                 key={title}

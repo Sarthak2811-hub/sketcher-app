@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { initDraw, ToolMode } from "../draw/index";
-import { Square, Circle, ArrowUpRight, Triangle as TriangleIcon, Pencil, Undo2, Redo2, Trash2, Type, Eraser, Download, Sparkles, Lock, MousePointer, Hand, Minus, Plus, RotateCcw, Link2, Check } from "lucide-react";
+import { Square, Circle, ArrowUpRight, Triangle as TriangleIcon, Pencil, Undo2, Redo2, Trash2, Type, Eraser, Download, Sparkles, Lock, MousePointer, Hand, Minus, Plus, RotateCcw, Share2, Check } from "lucide-react";
 
 export function Canvas({ roomId, socket }: { roomId: string; socket: WebSocket }) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -491,7 +491,7 @@ export function Canvas({ roomId, socket }: { roomId: string; socket: WebSocket }
                         }
                     `}
                 >
-                    {copied ? <Check size={18} strokeWidth={2.5} /> : <Link2 size={18} strokeWidth={2.2} />}
+                    {copied ? <Check size={18} strokeWidth={2.5} /> : <Share2 size={18} strokeWidth={2.2} />}
                 </button>
             </div>
 

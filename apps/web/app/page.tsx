@@ -135,7 +135,7 @@ export default function Home() {
             Launch App
           </a>
           <a
-            href="https://github.com"
+            href="https://github.com/Sarthak2811-hub/sketcher-app"
             target="_blank"
             rel="noopener noreferrer"
             style={{

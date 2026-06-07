@@ -303,30 +303,7 @@ function App() {
 
 
 
-      {/* CTA */}
-      <section className="py-24 px-6">
-        <div className="max-w-3xl mx-auto text-center relative">
-          <div className="absolute inset-0 bg-sky-500/5 rounded-3xl blur-3xl" />
-          <div className="relative bg-gradient-to-b from-white/[0.05] to-transparent border border-white/10 rounded-3xl px-8 py-16">
-            <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-5">
-              Start sketching{' '}
-              <span className="bg-gradient-to-r from-sky-400 to-cyan-400 bg-clip-text text-transparent">
-                right now
-              </span>
-            </h2>
-            <p className="text-white/40 text-lg mb-8 max-w-lg mx-auto">
-              No installation. No account needed. Open the canvas and let your ideas flow.
-            </p>
-            <a
-              href="/signup"
-              className="inline-flex items-center gap-2 bg-sky-500 hover:bg-sky-400 transition-all px-8 py-3.5 rounded-xl font-semibold shadow-xl shadow-sky-500/20"
-            >
-              Open Sketcher
-              <ArrowRight className="w-4 h-4" />
-            </a>
-          </div>
-        </div>
-      </section>
+
 
       {/* Footer */}
       <footer className="border-t border-white/5 py-12 px-6">
@@ -337,18 +314,10 @@ function App() {
             </div>
             <span className="font-semibold">Sketcher</span>
           </div>
-          <div className="flex items-center gap-6 text-sm text-white/30">
-            <a href="#" className="hover:text-white/60 transition-colors">Terms</a>
-            <a href="#" className="hover:text-white/60 transition-colors">Privacy</a>
-            <a href="#" className="hover:text-white/60 transition-colors">Blog</a>
-            <a href="#" className="hover:text-white/60 transition-colors">Changelog</a>
-          </div>
+
           <div className="flex items-center gap-3">
-            <a href="#" className="w-9 h-9 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/10 border border-white/5 transition-colors text-white/40 hover:text-white">
+            <a href="https://github.com/Sarthak2811-hub/sketcher-app" target="_blank" rel="noopener noreferrer" className="w-9 h-9 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/10 border border-white/5 transition-colors text-white/40 hover:text-white">
               <GithubIcon className="w-4 h-4" />
-            </a>
-            <a href="#" className="w-9 h-9 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/10 border border-white/5 transition-colors text-white/40 hover:text-white">
-              <TwitterIcon className="w-4 h-4" />
             </a>
           </div>
         </div>
@@ -379,23 +348,6 @@ function GithubIcon(props: React.SVGProps<SVGSVGElement>) {
   );
 }
 
-function TwitterIcon(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z" />
-    </svg>
-  );
-}
+
 
 export default App;

@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { initDraw, ToolMode } from "../draw/index";
-import { Square, Circle, ArrowUpRight, Triangle as TriangleIcon, Pencil, Undo2, Redo2, Trash2, Type, Eraser, Download, Sparkles, Lock, MousePointer } from "lucide-react";
+import { Square, Circle, ArrowUpRight, Triangle as TriangleIcon, Pencil, Undo2, Redo2, Trash2, Type, Eraser, Download, Sparkles, Lock, MousePointer, Hand, Minus, Plus, RotateCcw } from "lucide-react";
 
 export function Canvas({ roomId, socket }: { roomId: string; socket: WebSocket }) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    const [activeTool, setActiveTool] = useState<ToolMode>("select");
-    const activeToolRef = useRef<ToolMode>("select");
+    const [activeTool, setActiveTool] = useState<ToolMode>("pencil");
+    const activeToolRef = useRef<ToolMode>("pencil");
     activeToolRef.current = activeTool;
+
+    const [zoom, setZoom] = useState(1);
 
     const [activeColor, setActiveColor] = useState<string | null>(null);
     const activeColorRef = useRef<string | null>(null);
@@ -153,10 +155,13 @@ export function Canvas({ roomId, socket }: { roomId: string; socket: WebSocket }
         redo: () => void;
         clear: () => void;
         getShapes: () => any[];
+        resetView: () => void;
+        zoomIn: () => void;
+        zoomOut: () => void;
     } | null>(null);
 
     useEffect(() => {
-        let drawInstance: { cleanup: () => void; undo: () => void; redo: () => void; clear: () => void; getShapes: () => any[] } | undefined;
+        let drawInstance: { cleanup: () => void; undo: () => void; redo: () => void; clear: () => void; getShapes: () => any[]; resetView: () => void; zoomIn: () => void; zoomOut: () => void } | undefined;
 
         if (canvasRef.current) {
             canvasRef.current.width = window.innerWidth;
@@ -169,7 +174,10 @@ export function Canvas({ roomId, socket }: { roomId: string; socket: WebSocket }
                 () => activeToolRef.current,
                 () => activeColorRef.current,
                 () => activeSizeRef.current,
-                () => setShowModal(true)
+                () => setShowModal(true),
+                (newZoom) => {
+                    setZoom(newZoom);
+                }
             );
             if (res) {
                 drawInstance = res;
@@ -177,7 +185,10 @@ export function Canvas({ roomId, socket }: { roomId: string; socket: WebSocket }
                     undo: res.undo,
                     redo: res.redo,
                     clear: res.clear,
-                    getShapes: res.getShapes
+                    getShapes: res.getShapes,
+                    resetView: res.resetView,
+                    zoomIn: res.zoomIn,
+                    zoomOut: res.zoomOut
                 };
             }
         }
@@ -214,7 +225,8 @@ export function Canvas({ roomId, socket }: { roomId: string; socket: WebSocket }
         { id: "arrow" as ToolMode, icon: ArrowUpRight, label: "Arrow" },
         { id: "triangle" as ToolMode, icon: TriangleIcon, label: "Triangle" },
         { id: "text" as ToolMode, icon: Type, label: "Text" },
-        { id: "eraser" as ToolMode, icon: Eraser, label: "Eraser" }
+        { id: "eraser" as ToolMode, icon: Eraser, label: "Eraser" },
+        { id: "pan" as ToolMode, icon: Hand, label: "Pan" }
     ];
 
     const colors = [
@@ -605,6 +617,35 @@ export function Canvas({ roomId, socket }: { roomId: string; socket: WebSocket }
                     </div>
                 </div>
             )}
+
+            {/* Zoom Controls */}
+            <div className="absolute bottom-6 left-6 z-50 flex items-center gap-2 p-1.5 rounded-2xl bg-black/60 backdrop-blur-xl border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.5)]">
+                <button
+                    onClick={() => drawActionsRef.current?.zoomOut()}
+                    title="Zoom Out"
+                    className="flex items-center justify-center w-8 h-8 rounded-lg text-white/50 hover:text-white hover:bg-white/5 active:scale-95 transition-all duration-150 cursor-pointer"
+                >
+                    <Minus size={16} strokeWidth={2.2} />
+                </button>
+                <span className="text-[10px] font-bold tracking-wider text-white/70 min-w-[40px] text-center select-none uppercase">
+                    {Math.round(zoom * 100)}%
+                </span>
+                <button
+                    onClick={() => drawActionsRef.current?.zoomIn()}
+                    title="Zoom In"
+                    className="flex items-center justify-center w-8 h-8 rounded-lg text-white/50 hover:text-white hover:bg-white/5 active:scale-95 transition-all duration-150 cursor-pointer"
+                >
+                    <Plus size={16} strokeWidth={2.2} />
+                </button>
+                <div className="w-[1px] h-4 bg-white/10 mx-0.5" />
+                <button
+                    onClick={() => drawActionsRef.current?.resetView()}
+                    title="Reset View"
+                    className="flex items-center justify-center w-8 h-8 rounded-lg text-white/50 hover:text-white hover:bg-white/5 active:scale-95 transition-all duration-150 cursor-pointer"
+                >
+                    <RotateCcw size={16} strokeWidth={2.2} />
+                </button>
+            </div>
 
             <canvas ref={canvasRef} className="block w-full h-full" />
         </div>

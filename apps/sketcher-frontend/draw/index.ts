@@ -37,7 +37,7 @@ export type Shape = ({
     points: { x: number; y: number }[];
 }) & { id?: string; color?: string; size?: number; fontSize?: number };
 
-export type ToolMode = "select" | "rect" | "circle" | "arrow" | "triangle" | "pencil" | "text" | "eraser";
+export type ToolMode = "select" | "rect" | "circle" | "arrow" | "triangle" | "pencil" | "text" | "eraser" | "pan";
 
 function getShapeBoundingBox(shape: Shape) {
     if (shape.type === "rect") {
@@ -294,7 +294,16 @@ function resizeShape(shape: Shape, handle: ResizeHandle, mx: number, my: number,
     return shape;
 }
 
-export function initDraw(canvas:HTMLCanvasElement, roomId: string, socket: WebSocket, getActiveTool: () => ToolMode, getActiveColor: () => string | null, getActiveSize: () => number | null, onRequireSelection: () => void){
+export function initDraw(
+    canvas:HTMLCanvasElement, 
+    roomId: string, 
+    socket: WebSocket, 
+    getActiveTool: () => ToolMode, 
+    getActiveColor: () => string | null, 
+    getActiveSize: () => number | null, 
+    onRequireSelection: () => void,
+    onViewChange?: (zoom: number, panX: number, panY: number) => void
+){
             const ctx = canvas.getContext("2d");
             if (!ctx) {
                 return {
@@ -302,7 +311,10 @@ export function initDraw(canvas:HTMLCanvasElement, roomId: string, socket: WebSo
                     undo: () => {},
                     redo: () => {},
                     clear: () => {},
-                    getShapes: () => []
+                    getShapes: () => [],
+                    resetView: () => {},
+                    zoomIn: () => {},
+                    zoomOut: () => {}
                 };
             }
 
@@ -323,11 +335,83 @@ export function initDraw(canvas:HTMLCanvasElement, roomId: string, socket: WebSo
             let originalShapeBeforeResize: Shape | null = null;
             let resizeStartBox: { minX: number; maxX: number; minY: number; maxY: number } | null = null;
 
+            // Pan & Zoom state
+            let panX = 0;
+            let panY = 0;
+            let zoom = 1;
+            let isPanning = false;
+            let panStartX = 0;
+            let panStartY = 0;
+            let isSpacePressed = false;
+
+            const clearCanvas = () => {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.fillStyle = "#09090b";
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // Draw dynamic grid of dots
+                ctx.save();
+                const gridSpacing = 40;
+                const minX = -panX / zoom;
+                const minY = -panY / zoom;
+                const maxX = (canvas.width - panX) / zoom;
+                const maxY = (canvas.height - panY) / zoom;
+                const startGridX = Math.floor(minX / gridSpacing) * gridSpacing;
+                const startGridY = Math.floor(minY / gridSpacing) * gridSpacing;
+
+                ctx.fillStyle = "rgba(255, 255, 255, 0.08)";
+                if (zoom > 0.2) {
+                    for (let gx = startGridX; gx <= maxX; gx += gridSpacing) {
+                        for (let gy = startGridY; gy <= maxY; gy += gridSpacing) {
+                            const screenX = gx * zoom + panX;
+                            const screenY = gy * zoom + panY;
+                            ctx.beginPath();
+                            ctx.arc(screenX, screenY, 1, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                    }
+                }
+                ctx.restore();
+
+                // Draw shapes
+                ctx.save();
+                ctx.translate(panX, panY);
+                ctx.scale(zoom, zoom);
+
+                existingShapes.forEach((shape) => {
+                    drawShape(ctx, shape);
+                });
+
+                if (selectedShape) {
+                    const box = getShapeBoundingBox(selectedShape);
+                    const padding = 6;
+                    
+                    ctx.strokeStyle = "rgba(129, 140, 248, 0.8)"; // indigo-400
+                    ctx.lineWidth = 1.5 / zoom;
+                    ctx.setLineDash([6 / zoom, 4 / zoom]);
+                    
+                    const x = box.minX - padding;
+                    const y = box.minY - padding;
+                    const w = (box.maxX - box.minX) + 2 * padding;
+                    const h = (box.maxY - box.minY) + 2 * padding;
+                    
+                    ctx.strokeRect(x, y, w, h);
+                    ctx.setLineDash([]);
+                    
+                    ctx.fillStyle = "#818cf8";
+                    const hs = 6 / zoom;
+                    ctx.fillRect(x - hs/2, y - hs/2, hs, hs);
+                    ctx.fillRect(x + w - hs/2, y - hs/2, hs, hs);
+                    ctx.fillRect(x - hs/2, y + h - hs/2, hs, hs);
+                    ctx.fillRect(x + w - hs/2, y + h - hs/2, hs, hs);
+                }
+                ctx.restore();
+            };
+
             // Fetch shapes in the background asynchronously
             getExistingShapes(roomId).then((shapes) => {
-                // Prepend fetched shapes to preserve correct order and keep any locally drawn shapes
                 existingShapes = [...shapes, ...existingShapes];
-                clearCanvas(ctx, existingShapes, canvas);
+                clearCanvas();
             }).catch((err) => {
                 console.error("[Draw] Error loading initial shapes:", err);
             });
@@ -337,7 +421,6 @@ export function initDraw(canvas:HTMLCanvasElement, roomId: string, socket: WebSo
                     const message = JSON.parse(event.data);
                     if (message.type === "chat") {
                         const parsedShape = JSON.parse(message.message);
-                        // Only push/update if it's a valid known shape
                         if (parsedShape && (
                             parsedShape.type === "rect" || 
                             parsedShape.type === "circle" ||
@@ -356,7 +439,7 @@ export function initDraw(canvas:HTMLCanvasElement, roomId: string, socket: WebSo
                             } else {
                                 existingShapes.push(parsedShape);
                             }
-                            clearCanvas(ctx, existingShapes, canvas, selectedShape);
+                            clearCanvas();
                         }
                     } else if (message.type === "delete_shape") {
                         const shapeId = message.shapeId;
@@ -364,19 +447,19 @@ export function initDraw(canvas:HTMLCanvasElement, roomId: string, socket: WebSo
                             selectedShape = null;
                         }
                         existingShapes = existingShapes.filter(s => s.id !== shapeId);
-                        clearCanvas(ctx, existingShapes, canvas, selectedShape);
+                        clearCanvas();
                     } else if (message.type === "clear_canvas") {
                         selectedShape = null;
                         existingShapes = [];
                         myDrawnShapeIds = [];
                         redoStack = [];
-                        clearCanvas(ctx, existingShapes, canvas, selectedShape);
+                        clearCanvas();
                     }
                 } catch (e) {
                     console.error("[Draw] Failed to parse incoming shape from socket:", e);
                 }
             }
-            clearCanvas(ctx,existingShapes,canvas);
+            clearCanvas();
             
             let activeTextInput: HTMLInputElement | null = null;
 
@@ -388,26 +471,37 @@ export function initDraw(canvas:HTMLCanvasElement, roomId: string, socket: WebSo
                 const tool = getActiveTool();
                 const color = getActiveColor() || undefined;
                 const size = getActiveSize() || undefined;
+                const rect = canvas.getBoundingClientRect();
+
+                const shouldPan = tool === "pan" || isSpacePressed || e.button === 1;
+                if (shouldPan) {
+                    isPanning = true;
+                    panStartX = e.clientX - panX;
+                    panStartY = e.clientY - panY;
+                    canvas.style.cursor = "grabbing";
+                    return;
+                }
+
+                const clickWorldX = (e.clientX - rect.left - panX) / zoom;
+                const clickWorldY = (e.clientY - rect.top - panY) / zoom;
 
                 if (tool === "select") {
-                    const clickX = e.clientX;
-                    const clickY = e.clientY;
-
-                    // If a shape is already selected, check if click is on a resize handle first
                     if (selectedShape) {
-                        const handle = getResizeHandleUnderMouse(clickX, clickY, selectedShape);
+                        const handle = getResizeHandleUnderMouse(clickWorldX, clickWorldY, selectedShape);
                         if (handle) {
                             isResizing = true;
                             activeResizeHandle = handle;
                             originalShapeBeforeResize = JSON.parse(JSON.stringify(selectedShape));
                             resizeStartBox = getShapeBoundingBox(selectedShape);
+                            dragStartX = clickWorldX;
+                            dragStartY = clickWorldY;
                             return;
                         }
                     }
                     
                     let found: Shape | null = null;
                     for (let i = existingShapes.length - 1; i >= 0; i--) {
-                        if (isPointInShape(clickX, clickY, existingShapes[i])) {
+                        if (isPointInShape(clickWorldX, clickWorldY, existingShapes[i])) {
                             found = existingShapes[i];
                             break;
                         }
@@ -416,18 +510,17 @@ export function initDraw(canvas:HTMLCanvasElement, roomId: string, socket: WebSo
                     if (found) {
                         selectedShape = found;
                         isDragging = true;
-                        dragStartX = clickX;
-                        dragStartY = clickY;
+                        dragStartX = clickWorldX;
+                        dragStartY = clickWorldY;
                         originalShapeCopy = JSON.parse(JSON.stringify(found));
-                        clearCanvas(ctx, existingShapes, canvas, selectedShape);
+                        clearCanvas();
                     } else {
                         selectedShape = null;
-                        clearCanvas(ctx, existingShapes, canvas, selectedShape);
+                        clearCanvas();
                     }
                     return;
                 }
 
-                // Eraser does not require color selection (always black) but requires size selection!
                 const isColorRequired = tool !== "eraser";
                 if ((isColorRequired && color === undefined) || size === undefined) {
                     onRequireSelection();
@@ -435,13 +528,9 @@ export function initDraw(canvas:HTMLCanvasElement, roomId: string, socket: WebSo
                 }
 
                 if (tool === "text") {
-                    // FIX: If there's already an active text input, commit & remove it
-                    // immediately before creating a new one. The old blur-based approach
-                    // failed because activeTextInput was changed before the 100ms timeout
-                    // fired, so the old input was never removed (causing the ghost/watermark).
                     if (activeTextInput) {
                         const oldInput = activeTextInput;
-                        activeTextInput = null; // Clear first so blur handler won't double-fire
+                        activeTextInput = null;
 
                         const oldVal = oldInput.value.trim();
                         if (oldVal) {
@@ -462,7 +551,7 @@ export function initDraw(canvas:HTMLCanvasElement, roomId: string, socket: WebSo
                             existingShapes.push(shape);
                             myDrawnShapeIds.push(shapeId);
                             redoStack = [];
-                            clearCanvas(ctx, existingShapes, canvas);
+                            clearCanvas();
                             if (socket.readyState === WebSocket.OPEN) {
                                 socket.send(JSON.stringify({
                                     type: "chat",
@@ -476,8 +565,8 @@ export function initDraw(canvas:HTMLCanvasElement, roomId: string, socket: WebSo
                         }
                     }
 
-                    const inputX = e.clientX;
-                    const inputY = e.clientY;
+                    const inputWorldX = (e.clientX - rect.left - panX) / zoom;
+                    const inputWorldY = (e.clientY - rect.top - panY) / zoom;
                     const activeColorVal = color || "#ffffff";
                     const activeSizeVal = size || 6;
 
@@ -485,23 +574,25 @@ export function initDraw(canvas:HTMLCanvasElement, roomId: string, socket: WebSo
                     input.type = "text";
                     input.placeholder = "Type text & press Enter...";
                     input.style.position = "absolute";
-                    input.style.left = `${inputX}px`;
-                    input.style.top = `${inputY - 10}px`;
+                    
+                    const screenX = inputWorldX * zoom + panX + rect.left;
+                    const screenY = inputWorldY * zoom + panY + rect.top;
+                    input.style.left = `${screenX}px`;
+                    input.style.top = `${screenY - 10}px`;
                     input.style.background = "transparent";
                     input.style.border = "none";
                     input.style.outline = "none";
                     input.style.color = activeColorVal;
 
-                    // Store creation-time values on the element so we can commit correctly
-                    input.dataset.inputX = String(inputX);
-                    input.dataset.inputY = String(inputY);
+                    input.dataset.inputX = String(inputWorldX);
+                    input.dataset.inputY = String(inputWorldY);
                     input.dataset.inputColor = activeColorVal;
                     input.dataset.inputSize = String(activeSizeVal);
                     
-                    const fontSize = activeSizeVal === 2 ? 14 : activeSizeVal === 6 ? 20 : activeSizeVal === 12 ? 28 : activeSizeVal === 20 ? 40 : 18;
-                    input.style.font = `${fontSize}px sans-serif`;
+                    const baseFontSize = activeSizeVal === 2 ? 14 : activeSizeVal === 6 ? 20 : activeSizeVal === 12 ? 28 : activeSizeVal === 20 ? 40 : 18;
+                    input.style.font = `${baseFontSize * zoom}px sans-serif`;
                     input.style.zIndex = "1000";
-                    input.style.width = "300px";
+                    input.style.width = `${300 * zoom}px`;
                     input.style.caretColor = activeColorVal;
 
                     if (canvas.parentElement) {
@@ -518,8 +609,8 @@ export function initDraw(canvas:HTMLCanvasElement, roomId: string, socket: WebSo
                             const shape: Shape = {
                                 id: shapeId,
                                 type: "text",
-                                x: inputX,
-                                y: inputY,
+                                x: inputWorldX,
+                                y: inputWorldY,
                                 text: val,
                                 color: activeColorVal,
                                 size: activeSizeVal
@@ -527,8 +618,7 @@ export function initDraw(canvas:HTMLCanvasElement, roomId: string, socket: WebSo
                             existingShapes.push(shape);
                             myDrawnShapeIds.push(shapeId);
                             redoStack = [];
-
-                            clearCanvas(ctx, existingShapes, canvas);
+                            clearCanvas();
 
                             if (socket.readyState === WebSocket.OPEN) {
                                 socket.send(JSON.stringify({
@@ -570,8 +660,8 @@ export function initDraw(canvas:HTMLCanvasElement, roomId: string, socket: WebSo
                 }
 
                 clicked = true;
-                startX = e.clientX;
-                startY = e.clientY;
+                startX = (e.clientX - rect.left - panX) / zoom;
+                startY = (e.clientY - rect.top - panY) / zoom;
 
                 if (getActiveTool() === "pencil") {
                     currentPencilPoints = [{ x: startX, y: startY }];
@@ -582,6 +672,16 @@ export function initDraw(canvas:HTMLCanvasElement, roomId: string, socket: WebSo
 
             const handleMouseUp = (e: MouseEvent) => {
                 let tool = getActiveTool();
+                if (isPanning) {
+                    isPanning = false;
+                    canvas.style.cursor = tool === "pan" || isSpacePressed ? "grab" : "default";
+                    return;
+                }
+
+                const rect = canvas.getBoundingClientRect();
+                const currentWorldX = (e.clientX - rect.left - panX) / zoom;
+                const currentWorldY = (e.clientY - rect.top - panY) / zoom;
+
                 if (tool === "select") {
                     if (isResizing && selectedShape && originalShapeBeforeResize) {
                         isResizing = false;
@@ -609,12 +709,10 @@ export function initDraw(canvas:HTMLCanvasElement, roomId: string, socket: WebSo
 
                     if (isDragging && selectedShape && originalShapeCopy) {
                         isDragging = false;
-                        const currentX = e.clientX;
-                        const currentY = e.clientY;
-                        const dx = currentX - dragStartX;
-                        const dy = currentY - dragStartY;
+                        const dx = currentWorldX - dragStartX;
+                        const dy = currentWorldY - dragStartY;
 
-                        if (Math.abs(dx) > 2 || Math.abs(dy) > 2) {
+                        if (Math.abs(dx) > 2 / zoom || Math.abs(dy) > 2 / zoom) {
                             const shapeId = selectedShape.id;
                             if (shapeId) {
                                 if (socket.readyState === WebSocket.OPEN) {
@@ -637,10 +735,8 @@ export function initDraw(canvas:HTMLCanvasElement, roomId: string, socket: WebSo
                 }
 
                 if (getActiveTool() === "text") return;
-                const currentX = e.clientX;
-                const currentY = e.clientY;
-                const width = currentX - startX;
-                const height = currentY - startY;
+                const width = currentWorldX - startX;
+                const height = currentWorldY - startY;
                 clicked = false;
 
                 tool = getActiveTool();
@@ -700,8 +796,8 @@ export function initDraw(canvas:HTMLCanvasElement, roomId: string, socket: WebSo
                         type: "arrow",
                         x: startX,
                         y: startY,
-                        endX: currentX,
-                        endY: currentY,
+                        endX: currentWorldX,
+                        endY: currentWorldY,
                         color: color,
                         size: size
                     };
@@ -712,8 +808,8 @@ export function initDraw(canvas:HTMLCanvasElement, roomId: string, socket: WebSo
                         type: "triangle",
                         x: startX,
                         y: startY,
-                        endX: currentX,
-                        endY: currentY,
+                        endX: currentWorldX,
+                        endY: currentWorldY,
                         color: color,
                         size: size
                     };
@@ -721,7 +817,7 @@ export function initDraw(canvas:HTMLCanvasElement, roomId: string, socket: WebSo
 
                 existingShapes.push(shape);
                 myDrawnShapeIds.push(shapeId);
-                redoStack = []; // Clear redo stack on new action
+                redoStack = [];
 
                 if (socket.readyState === WebSocket.OPEN) {
                     socket.send(JSON.stringify({
@@ -737,36 +833,47 @@ export function initDraw(canvas:HTMLCanvasElement, roomId: string, socket: WebSo
             const handleMouseMove = (e: MouseEvent) => {
                 const tool = getActiveTool();
                 const size = getActiveSize() || 2;
+                const rect = canvas.getBoundingClientRect();
 
-                if (tool !== "select") {
+                if (isPanning) {
+                    panX = e.clientX - panStartX;
+                    panY = e.clientY - panStartY;
+                    clearCanvas();
+                    onViewChange?.(zoom, panX, panY);
+                    return;
+                }
+
+                const currentWorldX = (e.clientX - rect.left - panX) / zoom;
+                const currentWorldY = (e.clientY - rect.top - panY) / zoom;
+
+                if (tool === "pan" || isSpacePressed) {
+                    canvas.style.cursor = isPanning ? "grabbing" : "grab";
+                } else if (tool !== "select") {
                     canvas.style.cursor = "default";
                 }
 
                 if (tool === "select") {
-                    const currentX = e.clientX;
-                    const currentY = e.clientY;
-
                     if (isResizing && selectedShape && originalShapeBeforeResize && resizeStartBox && activeResizeHandle) {
                         const shapeIndex = existingShapes.findIndex(s => s.id === selectedShape!.id);
                         if (shapeIndex !== -1) {
-                            const updatedShape = resizeShape(originalShapeBeforeResize, activeResizeHandle, currentX, currentY, resizeStartBox);
+                            const updatedShape = resizeShape(originalShapeBeforeResize, activeResizeHandle, currentWorldX, currentWorldY, resizeStartBox);
                             existingShapes[shapeIndex] = updatedShape;
                             selectedShape = updatedShape;
-                            clearCanvas(ctx, existingShapes, canvas, selectedShape);
+                            clearCanvas();
                         }
                         return;
                     }
 
                     if (isDragging && selectedShape && originalShapeCopy) {
-                        const dx = currentX - dragStartX;
-                        const dy = currentY - dragStartY;
+                        const dx = currentWorldX - dragStartX;
+                        const dy = currentWorldY - dragStartY;
 
                         const shapeIndex = existingShapes.findIndex(s => s.id === selectedShape!.id);
                         if (shapeIndex !== -1) {
                             const updatedShape = moveShape(originalShapeCopy, dx, dy);
                             existingShapes[shapeIndex] = updatedShape;
                             selectedShape = updatedShape;
-                            clearCanvas(ctx, existingShapes, canvas, selectedShape);
+                            clearCanvas();
                         }
                         return;
                     }
@@ -774,7 +881,7 @@ export function initDraw(canvas:HTMLCanvasElement, roomId: string, socket: WebSo
                     // Update cursor style on hover when not dragging or resizing
                     if (!isDragging && !isResizing) {
                         if (selectedShape) {
-                            const handle = getResizeHandleUnderMouse(currentX, currentY, selectedShape);
+                            const handle = getResizeHandleUnderMouse(currentWorldX, currentWorldY, selectedShape);
                             if (handle) {
                                 if (handle === "TL" || handle === "BR") {
                                     canvas.style.cursor = "nwse-resize";
@@ -784,7 +891,7 @@ export function initDraw(canvas:HTMLCanvasElement, roomId: string, socket: WebSo
                                 return;
                             }
 
-                            if (isPointInShape(currentX, currentY, selectedShape)) {
+                            if (isPointInShape(currentWorldX, currentWorldY, selectedShape)) {
                                 canvas.style.cursor = "move";
                                 return;
                             }
@@ -792,7 +899,7 @@ export function initDraw(canvas:HTMLCanvasElement, roomId: string, socket: WebSo
 
                         let hoverShape = false;
                         for (let i = existingShapes.length - 1; i >= 0; i--) {
-                            if (isPointInShape(currentX, currentY, existingShapes[i])) {
+                            if (isPointInShape(currentWorldX, currentWorldY, existingShapes[i])) {
                                 hoverShape = true;
                                 break;
                             }
@@ -809,15 +916,16 @@ export function initDraw(canvas:HTMLCanvasElement, roomId: string, socket: WebSo
 
                 if (tool === "text") return;
 
-                const currentX = e.clientX;
-                const currentY = e.clientY;
-
                 if (tool === "eraser") {
                     if (clicked) {
-                        currentEraserPoints.push({ x: currentX, y: currentY });
+                        currentEraserPoints.push({ x: currentWorldX, y: currentWorldY });
                     }
 
-                    clearCanvas(ctx, existingShapes, canvas);
+                    clearCanvas();
+
+                    ctx.save();
+                    ctx.translate(panX, panY);
+                    ctx.scale(zoom, zoom);
 
                     if (clicked && currentEraserPoints.length > 0) {
                         ctx.strokeStyle = "#000000";
@@ -830,26 +938,28 @@ export function initDraw(canvas:HTMLCanvasElement, roomId: string, socket: WebSo
                         ctx.stroke();
                     }
 
-                    // Circular guide representing the eraser radius
                     ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
-                    ctx.lineWidth = 1;
+                    ctx.lineWidth = 1 / zoom;
                     ctx.beginPath();
-                    ctx.arc(currentX, currentY, size / 2, 0, Math.PI * 2);
+                    ctx.arc(currentWorldX, currentWorldY, size / 2, 0, Math.PI * 2);
                     ctx.stroke();
+                    ctx.restore();
 
                     return;
                 }
 
                 if (clicked){
-                    const width = currentX - startX;
-                    const height = currentY - startY;
-                    
+                    const width = currentWorldX - startX;
+                    const height = currentWorldY - startY;
                     const color = getActiveColor() || "#ffffff";
 
                     if (tool === "pencil") {
-                        currentPencilPoints.push({ x: currentX, y: currentY });
+                        currentPencilPoints.push({ x: currentWorldX, y: currentWorldY });
                         
-                        clearCanvas(ctx, existingShapes, canvas);
+                        clearCanvas();
+                        ctx.save();
+                        ctx.translate(panX, panY);
+                        ctx.scale(zoom, zoom);
                         ctx.strokeStyle = color;
                         ctx.lineWidth = size;
                         
@@ -861,10 +971,14 @@ export function initDraw(canvas:HTMLCanvasElement, roomId: string, socket: WebSo
                             }
                             ctx.stroke();
                         }
+                        ctx.restore();
                         return;
                     }
 
-                    clearCanvas(ctx,existingShapes,canvas);
+                    clearCanvas();
+                    ctx.save();
+                    ctx.translate(panX, panY);
+                    ctx.scale(zoom, zoom);
                     ctx.strokeStyle = color;
                     ctx.lineWidth = size;
 
@@ -876,35 +990,80 @@ export function initDraw(canvas:HTMLCanvasElement, roomId: string, socket: WebSo
                         ctx.arc(startX, startY, radius, 0, Math.PI * 2);
                         ctx.stroke();
                     } else if (tool === "arrow") {
-                        // Draw temporary main line
                         ctx.beginPath();
                         ctx.moveTo(startX, startY);
-                        ctx.lineTo(currentX, currentY);
+                        ctx.lineTo(currentWorldX, currentWorldY);
                         ctx.stroke();
                         
-                        // Draw temporary arrowhead
                         const angle = Math.atan2(height, width);
                         const headLength = 15;
                         ctx.beginPath();
-                        ctx.moveTo(currentX, currentY);
-                        ctx.lineTo(currentX - headLength * Math.cos(angle - Math.PI / 6), currentY - headLength * Math.sin(angle - Math.PI / 6));
-                        ctx.moveTo(currentX, currentY);
-                        ctx.lineTo(currentX - headLength * Math.cos(angle + Math.PI / 6), currentY - headLength * Math.sin(angle + Math.PI / 6));
+                        ctx.moveTo(currentWorldX, currentWorldY);
+                        ctx.lineTo(currentWorldX - headLength * Math.cos(angle - Math.PI / 6), currentWorldY - headLength * Math.sin(angle - Math.PI / 6));
+                        ctx.moveTo(currentWorldX, currentWorldY);
+                        ctx.lineTo(currentWorldX - headLength * Math.cos(angle + Math.PI / 6), currentWorldY - headLength * Math.sin(angle + Math.PI / 6));
                         ctx.stroke();
                     } else if (tool === "triangle") {
                         ctx.beginPath();
                         ctx.moveTo(startX, startY);
-                        ctx.lineTo(2 * startX - currentX, currentY);
-                        ctx.lineTo(currentX, currentY);
+                        ctx.lineTo(2 * startX - currentWorldX, currentWorldY);
+                        ctx.lineTo(currentWorldX, currentWorldY);
                         ctx.closePath();
                         ctx.stroke();
                     }
+                    ctx.restore();
                 }
             };
 
             const handleMouseLeave = () => {
                 if (getActiveTool() === "eraser") {
-                    clearCanvas(ctx, existingShapes, canvas);
+                    clearCanvas();
+                }
+            };
+
+            const handleWheel = (e: WheelEvent) => {
+                e.preventDefault();
+                const rect = canvas.getBoundingClientRect();
+                const mouseX = e.clientX - rect.left;
+                const mouseY = e.clientY - rect.top;
+
+                const zoomFactor = 1.1;
+                let newZoom = zoom;
+                if (e.deltaY < 0) {
+                    newZoom = Math.min(newZoom * zoomFactor, 20);
+                } else {
+                    newZoom = Math.max(newZoom / zoomFactor, 0.1);
+                }
+
+                if (newZoom !== zoom) {
+                    const worldX = (mouseX - panX) / zoom;
+                    const worldY = (mouseY - panY) / zoom;
+                    zoom = newZoom;
+                    panX = mouseX - worldX * zoom;
+                    panY = mouseY - worldY * zoom;
+
+                    clearCanvas();
+                    onViewChange?.(zoom, panX, panY);
+                }
+            };
+
+            const handleKeyDown = (e: KeyboardEvent) => {
+                if (e.code === "Space") {
+                    if (document.activeElement?.tagName !== "INPUT" && document.activeElement?.tagName !== "TEXTAREA") {
+                        e.preventDefault();
+                        isSpacePressed = true;
+                        canvas.style.cursor = "grab";
+                    }
+                }
+            };
+
+            const handleKeyUp = (e: KeyboardEvent) => {
+                if (e.code === "Space") {
+                    isSpacePressed = false;
+                    const tool = getActiveTool();
+                    if (tool === "select") {
+                        canvas.style.cursor = "default";
+                    }
                 }
             };
 
@@ -912,6 +1071,9 @@ export function initDraw(canvas:HTMLCanvasElement, roomId: string, socket: WebSo
             canvas.addEventListener("mouseup", handleMouseUp);
             canvas.addEventListener("mousemove", handleMouseMove);
             canvas.addEventListener("mouseleave", handleMouseLeave);
+            canvas.addEventListener("wheel", handleWheel, { passive: false });
+            window.addEventListener("keydown", handleKeyDown);
+            window.addEventListener("keyup", handleKeyUp);
 
             const undo = () => {
                 if (myDrawnShapeIds.length === 0) return;
@@ -924,7 +1086,7 @@ export function initDraw(canvas:HTMLCanvasElement, roomId: string, socket: WebSo
                 if (shapeIndex !== -1) {
                     const [removedShape] = existingShapes.splice(shapeIndex, 1);
                     redoStack.push(removedShape);
-                    clearCanvas(ctx, existingShapes, canvas, selectedShape);
+                    clearCanvas();
 
                     if (socket.readyState === WebSocket.OPEN) {
                         socket.send(JSON.stringify({
@@ -942,12 +1104,11 @@ export function initDraw(canvas:HTMLCanvasElement, roomId: string, socket: WebSo
                 if (!restoredShape) return;
 
                 selectedShape = null;
-
                 existingShapes.push(restoredShape);
                 if (restoredShape.id) {
                     myDrawnShapeIds.push(restoredShape.id);
                 }
-                clearCanvas(ctx, existingShapes, canvas, selectedShape);
+                clearCanvas();
 
                 if (socket.readyState === WebSocket.OPEN) {
                     socket.send(JSON.stringify({
@@ -963,7 +1124,7 @@ export function initDraw(canvas:HTMLCanvasElement, roomId: string, socket: WebSo
                 existingShapes = [];
                 myDrawnShapeIds = [];
                 redoStack = [];
-                clearCanvas(ctx, existingShapes, canvas, selectedShape);
+                clearCanvas();
 
                 if (socket.readyState === WebSocket.OPEN) {
                     socket.send(JSON.stringify({
@@ -979,6 +1140,9 @@ export function initDraw(canvas:HTMLCanvasElement, roomId: string, socket: WebSo
                     canvas.removeEventListener("mouseup", handleMouseUp);
                     canvas.removeEventListener("mousemove", handleMouseMove);
                     canvas.removeEventListener("mouseleave", handleMouseLeave);
+                    canvas.removeEventListener("wheel", handleWheel);
+                    window.removeEventListener("keydown", handleKeyDown);
+                    window.removeEventListener("keyup", handleKeyUp);
                     socket.onmessage = null;
                     if (activeTextInput && activeTextInput.parentElement) {
                         activeTextInput.parentElement.removeChild(activeTextInput);
@@ -987,7 +1151,38 @@ export function initDraw(canvas:HTMLCanvasElement, roomId: string, socket: WebSo
                 undo,
                 redo,
                 clear,
-                getShapes: () => existingShapes
+                getShapes: () => existingShapes,
+                resetView: () => {
+                    panX = 0;
+                    panY = 0;
+                    zoom = 1;
+                    clearCanvas();
+                    onViewChange?.(zoom, panX, panY);
+                },
+                zoomIn: () => {
+                    const rect = canvas.getBoundingClientRect();
+                    const centerX = rect.width / 2;
+                    const centerY = rect.height / 2;
+                    const worldX = (centerX - panX) / zoom;
+                    const worldY = (centerY - panY) / zoom;
+                    zoom = Math.min(zoom * 1.2, 20);
+                    panX = centerX - worldX * zoom;
+                    panY = centerY - worldY * zoom;
+                    clearCanvas();
+                    onViewChange?.(zoom, panX, panY);
+                },
+                zoomOut: () => {
+                    const rect = canvas.getBoundingClientRect();
+                    const centerX = rect.width / 2;
+                    const centerY = rect.height / 2;
+                    const worldX = (centerX - panX) / zoom;
+                    const worldY = (centerY - panY) / zoom;
+                    zoom = Math.max(zoom / 1.2, 0.1);
+                    panX = centerX - worldX * zoom;
+                    panY = centerY - worldY * zoom;
+                    clearCanvas();
+                    onViewChange?.(zoom, panX, panY);
+                }
             };
 }
 
@@ -1053,40 +1248,7 @@ function drawShape(ctx: CanvasRenderingContext2D, shape: Shape) {
     }
 }
 
-function clearCanvas(ctx: CanvasRenderingContext2D, existingShapes: Shape[], canvas:HTMLCanvasElement, selectedShape?: Shape | null){
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    ctx.fillStyle = "rgba(0,0,0)"
-    ctx.fillRect(0,0,canvas.width,canvas.height);
-    
-    existingShapes.forEach((shape) => {
-        drawShape(ctx, shape);
-    });
-
-    if (selectedShape) {
-        const box = getShapeBoundingBox(selectedShape);
-        const padding = 6;
-        
-        ctx.strokeStyle = "rgba(129, 140, 248, 0.8)"; // indigo-400
-        ctx.lineWidth = 1.5;
-        ctx.setLineDash([6, 4]); // dashed lines
-        
-        const x = box.minX - padding;
-        const y = box.minY - padding;
-        const w = (box.maxX - box.minX) + 2 * padding;
-        const h = (box.maxY - box.minY) + 2 * padding;
-        
-        ctx.strokeRect(x, y, w, h);
-        ctx.setLineDash([]); // Reset dashed lines
-        
-        // Draw tiny selection handles at 4 corners
-        ctx.fillStyle = "#818cf8";
-        const hs = 6; // handle size
-        ctx.fillRect(x - hs/2, y - hs/2, hs, hs);
-        ctx.fillRect(x + w - hs/2, y - hs/2, hs, hs);
-        ctx.fillRect(x - hs/2, y + h - hs/2, hs, hs);
-        ctx.fillRect(x + w - hs/2, y + h - hs/2, hs, hs);
-    }
-}
+// Removed legacy clearCanvas helper since it has been moved inside initDraw.
 
 async function getExistingShapes(roomId: string): Promise<Shape[]> {
     try {

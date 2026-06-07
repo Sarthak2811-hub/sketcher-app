@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { initDraw, ToolMode } from "../draw/index";
-import { Square, Circle, ArrowUpRight, Triangle as TriangleIcon, Pencil, Undo2, Redo2, Trash2, Type, Eraser, Download, Sparkles, Lock, MousePointer, Hand, Minus, Plus, RotateCcw } from "lucide-react";
+import { Square, Circle, ArrowUpRight, Triangle as TriangleIcon, Pencil, Undo2, Redo2, Trash2, Type, Eraser, Download, Sparkles, Lock, MousePointer, Hand, Minus, Plus, RotateCcw, Link2, Check } from "lucide-react";
 
 export function Canvas({ roomId, socket }: { roomId: string; socket: WebSocket }) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -23,6 +23,7 @@ export function Canvas({ roomId, socket }: { roomId: string; socket: WebSocket }
     const [exportOpen, setExportOpen] = useState<boolean>(false);
     const [showModal, setShowModal] = useState<boolean>(false);
     const [showPremiumModal, setShowPremiumModal] = useState<boolean>(false);
+    const [copied, setCopied] = useState<boolean>(false);
 
     const toggleColor = () => {
         setColorOpen(!colorOpen);
@@ -40,6 +41,14 @@ export function Canvas({ roomId, socket }: { roomId: string; socket: WebSocket }
         setExportOpen(!exportOpen);
         setColorOpen(false);
         setSizeOpen(false);
+    };
+
+    const handleShare = () => {
+        if (typeof window === "undefined") return;
+        navigator.clipboard.writeText(window.location.href).then(() => {
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        });
     };
 
     const isPremiumUser = () => {
@@ -466,12 +475,66 @@ export function Canvas({ roomId, socket }: { roomId: string; socket: WebSocket }
                 >
                     <Trash2 size={18} strokeWidth={2.2} />
                 </button>
+
+                {/* Vertical Divider */}
+                <div className="w-[1px] h-6 bg-white/10 mx-1" />
+
+                {/* Share Room Button */}
+                <button
+                    onClick={handleShare}
+                    title="Copy Room Link"
+                    className={`
+                        flex items-center gap-2 px-3 py-2 h-10 rounded-xl font-semibold text-[10px] uppercase tracking-wider
+                        transition-all duration-200 ease-out cursor-pointer select-none hover:scale-105 active:scale-95
+                        ${
+                            copied
+                                ? "bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.3)]"
+                                : "bg-indigo-600/20 border border-indigo-500/30 text-indigo-300 hover:bg-indigo-600/30 hover:border-indigo-400/50"
+                        }
+                    `}
+                >
+                    {copied ? (
+                        <><Check size={14} strokeWidth={2.5} /><span>Copied!</span></>
+                    ) : (
+                        <><Link2 size={14} strokeWidth={2.2} /><span>Share</span></>
+                    )}
+                </button>
             </div>
 
             {/* Invisible backdrop overlay to close dropdowns when clicking away */}
             {(colorOpen || sizeOpen || exportOpen) && (
                 <div className="fixed inset-0 z-40" onClick={() => { setColorOpen(false); setSizeOpen(false); setExportOpen(false); }} />
             )}
+
+            {/* Share Toast Notification */}
+            <div
+                style={{
+                    position: "fixed",
+                    bottom: "88px",
+                    left: "50%",
+                    transform: copied ? "translateX(-50%) translateY(0)" : "translateX(-50%) translateY(16px)",
+                    opacity: copied ? 1 : 0,
+                    pointerEvents: "none",
+                    transition: "all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)",
+                    zIndex: 200,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    padding: "10px 18px",
+                    borderRadius: "12px",
+                    background: "rgba(16, 185, 129, 0.15)",
+                    border: "1px solid rgba(52, 211, 153, 0.3)",
+                    backdropFilter: "blur(12px)",
+                    color: "#6ee7b7",
+                    fontSize: "13px",
+                    fontWeight: 600,
+                    boxShadow: "0 8px 32px rgba(0,0,0,0.4), 0 0 20px rgba(52,211,153,0.15)",
+                    whiteSpace: "nowrap"
+                }}
+            >
+                <Check size={15} strokeWidth={2.5} />
+                Room link copied to clipboard!
+            </div>
 
             {/* Properties Selection Modal Popup */}
             {showModal && (

@@ -79,6 +79,7 @@ export function RoomCanvas({roomId}:{
     useEffect(() => {
         let ws: WebSocket | null = null;
         let active = true;
+        let pingInterval: any = null;
 
         async function connect() {
             setError(null);
@@ -116,6 +117,13 @@ export function RoomCanvas({roomId}:{
                         type: "join",
                         roomId
                     }));
+
+                    // Start sending ping heartbeats every 30 seconds to keep connection alive on Render
+                    pingInterval = setInterval(() => {
+                        if (socketInstance.readyState === WebSocket.OPEN) {
+                            socketInstance.send(JSON.stringify({ type: "ping" }));
+                        }
+                    }, 30000);
                 };
                 
                 socketInstance.onerror = () => {
@@ -126,6 +134,10 @@ export function RoomCanvas({roomId}:{
                 
                 socketInstance.onclose = (event) => {
                     console.log("[RoomCanvas] WebSocket closed:", event.code, event.reason);
+                    if (pingInterval) {
+                        clearInterval(pingInterval);
+                        pingInterval = null;
+                    }
                     if (!active) return; // StrictMode cleanup — ignore silently
                     
                     setSocket(null); // Clear socket state to unmount the canvas
@@ -150,6 +162,9 @@ export function RoomCanvas({roomId}:{
 
         return () => {
             active = false;
+            if (pingInterval) {
+                clearInterval(pingInterval);
+            }
             if (ws) {
                 ws.close();
             }

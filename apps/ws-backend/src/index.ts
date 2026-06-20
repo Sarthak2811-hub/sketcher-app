@@ -78,6 +78,11 @@ wss.on("connection", function connection(ws, request) {
       return;
     }
 
+    if (parsedData.type === "ping") {
+      ws.send(JSON.stringify({ type: "pong" }));
+      return;
+    }
+
     if (parsedData.type == "join") {
       const user = users.find(x => x.ws == ws);
       user?.rooms.push(parsedData.roomId);

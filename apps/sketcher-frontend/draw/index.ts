@@ -344,7 +344,68 @@ export function initDraw(
             let panStartY = 0;
             let isSpacePressed = false;
 
+            const offscreenCanvas = document.createElement("canvas");
+            const offscreenCtx = offscreenCanvas.getContext("2d")!;
+
             const clearCanvas = () => {
+                // Ensure offscreen canvas matches visible canvas dimensions
+                if (offscreenCanvas.width !== canvas.width || offscreenCanvas.height !== canvas.height) {
+                    offscreenCanvas.width = canvas.width;
+                    offscreenCanvas.height = canvas.height;
+                }
+
+                // 1. Clear offscreen canvas
+                offscreenCtx.clearRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
+
+                // 2. Draw all non-eraser shapes onto the offscreen canvas
+                offscreenCtx.save();
+                offscreenCtx.translate(panX, panY);
+                offscreenCtx.scale(zoom, zoom);
+                offscreenCtx.lineCap = "round";
+                offscreenCtx.lineJoin = "round";
+
+                existingShapes.forEach((shape) => {
+                    if (shape.type !== "eraser") {
+                        drawShape(offscreenCtx, shape);
+                    }
+                });
+
+                // Draw active pencil path if drawing
+                if (currentPencilPoints.length > 0) {
+                    offscreenCtx.strokeStyle = getActiveColor() || "#ffffff";
+                    offscreenCtx.lineWidth = getActiveSize() || 2;
+                    offscreenCtx.beginPath();
+                    offscreenCtx.moveTo(currentPencilPoints[0].x, currentPencilPoints[0].y);
+                    for (let i = 1; i < currentPencilPoints.length; i++) {
+                        offscreenCtx.lineTo(currentPencilPoints[i].x, currentPencilPoints[i].y);
+                    }
+                    offscreenCtx.stroke();
+                }
+
+                // 3. Subtract eraser shapes using destination-out on offscreen canvas
+                offscreenCtx.globalCompositeOperation = "destination-out";
+
+                existingShapes.forEach((shape) => {
+                    if (shape.type === "eraser") {
+                        drawShape(offscreenCtx, shape);
+                    }
+                });
+
+                // Draw active eraser path if erasing
+                if (currentEraserPoints.length > 0) {
+                    offscreenCtx.strokeStyle = "rgba(0,0,0,1)";
+                    offscreenCtx.lineWidth = getActiveSize() || 6;
+                    offscreenCtx.beginPath();
+                    offscreenCtx.moveTo(currentEraserPoints[0].x, currentEraserPoints[0].y);
+                    for (let i = 1; i < currentEraserPoints.length; i++) {
+                        offscreenCtx.lineTo(currentEraserPoints[i].x, currentEraserPoints[i].y);
+                    }
+                    offscreenCtx.stroke();
+                }
+
+                offscreenCtx.restore();
+
+                // 4. Draw background and dots on the main visible canvas
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
                 ctx.fillStyle = "#09090b";
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -373,16 +434,15 @@ export function initDraw(
                 }
                 ctx.restore();
 
-                // Draw shapes
-                ctx.save();
-                ctx.translate(panX, panY);
-                ctx.scale(zoom, zoom);
+                // 5. Draw the offscreen canvas (with shapes and erasures) on top of the main canvas
+                ctx.drawImage(offscreenCanvas, 0, 0);
 
-                existingShapes.forEach((shape) => {
-                    drawShape(ctx, shape);
-                });
-
+                // 6. Draw selection bounding box if a shape is selected
                 if (selectedShape) {
+                    ctx.save();
+                    ctx.translate(panX, panY);
+                    ctx.scale(zoom, zoom);
+
                     const box = getShapeBoundingBox(selectedShape);
                     const padding = 6;
                     
@@ -404,8 +464,8 @@ export function initDraw(
                     ctx.fillRect(x + w - hs/2, y - hs/2, hs, hs);
                     ctx.fillRect(x - hs/2, y + h - hs/2, hs, hs);
                     ctx.fillRect(x + w - hs/2, y + h - hs/2, hs, hs);
+                    ctx.restore();
                 }
-                ctx.restore();
             };
 
             // Fetch shapes in the background asynchronously
@@ -923,21 +983,10 @@ export function initDraw(
 
                     clearCanvas();
 
+                    // Draw only the preview circle of the eraser tool on the main canvas
                     ctx.save();
                     ctx.translate(panX, panY);
                     ctx.scale(zoom, zoom);
-
-                    if (clicked && currentEraserPoints.length > 0) {
-                        ctx.strokeStyle = "#000000";
-                        ctx.lineWidth = size;
-                        ctx.beginPath();
-                        ctx.moveTo(currentEraserPoints[0].x, currentEraserPoints[0].y);
-                        for (let i = 1; i < currentEraserPoints.length; i++) {
-                            ctx.lineTo(currentEraserPoints[i].x, currentEraserPoints[i].y);
-                        }
-                        ctx.stroke();
-                    }
-
                     ctx.strokeStyle = "rgba(255, 255, 255, 0.4)";
                     ctx.lineWidth = 1 / zoom;
                     ctx.beginPath();
@@ -955,23 +1004,7 @@ export function initDraw(
 
                     if (tool === "pencil") {
                         currentPencilPoints.push({ x: currentWorldX, y: currentWorldY });
-                        
                         clearCanvas();
-                        ctx.save();
-                        ctx.translate(panX, panY);
-                        ctx.scale(zoom, zoom);
-                        ctx.strokeStyle = color;
-                        ctx.lineWidth = size;
-                        
-                        if (currentPencilPoints.length > 0) {
-                            ctx.beginPath();
-                            ctx.moveTo(currentPencilPoints[0].x, currentPencilPoints[0].y);
-                            for (let i = 1; i < currentPencilPoints.length; i++) {
-                                ctx.lineTo(currentPencilPoints[i].x, currentPencilPoints[i].y);
-                            }
-                            ctx.stroke();
-                        }
-                        ctx.restore();
                         return;
                     }
 

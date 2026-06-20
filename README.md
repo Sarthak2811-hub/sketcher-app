@@ -180,6 +180,38 @@ docker compose up -d postgres
 
 ---
 
+## ☁️ Render.com Deployment (Production)
+
+This project is optimized for deployment on **Render.com** using Docker runtimes for robust monorepo path resolution.
+
+### 1. HTTP Backend (`apps/http-backend`)
+- **Service Type**: Web Service
+- **Runtime**: `Docker`
+- **Docker Path**: `apps/http-backend/Dockerfile`
+- **Environment Variables**:
+  - `DATABASE_URL`: Neon PostgreSQL connection string
+  - `JWT_SECRET`: A secure signing key matching the WS backend
+
+### 2. WebSocket Backend (`apps/ws-backend`)
+- **Service Type**: Web Service
+- **Runtime**: `Docker`
+- **Docker Path**: `apps/ws-backend/Dockerfile`
+- **Environment Variables**:
+  - `DATABASE_URL`: Neon PostgreSQL connection string
+  - `JWT_SECRET`: The same secure signing key set in the HTTP backend
+
+*Note: The WebSocket backend server is equipped with a root HTTP GET listener on `/` and `/health` to satisfy Render's load balancer checks natively.*
+
+### 3. Drawing Canvas Frontend (`apps/sketcher-frontend`)
+- **Service Type**: Web Service
+- **Runtime**: `Docker`
+- **Docker Path**: `apps/sketcher-frontend/Dockerfile`
+- **Environment Variables & Docker Build Arguments**:
+  - `NEXT_PUBLIC_HTTP_BACKEND`: The public HTTP Backend URL (e.g. `https://your-http-backend.onrender.com`)
+  - `NEXT_PUBLIC_WS_URL`: The public WebSocket Backend URL (e.g. `https://your-ws-backend.onrender.com`)
+
+---
+
 ## 📡 API Overview
 
 | Method | Endpoint | Description |

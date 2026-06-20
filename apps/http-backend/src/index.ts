@@ -22,6 +22,13 @@ app.use((req, res, next) => {
     }
 });
 
+app.get("/", (req, res) => {
+    res.json({
+        status: "healthy",
+        message: "Sketcher HTTP Backend is running"
+    });
+});
+
 app.post("/signup", async (req, res) => {
 
     const parseData = CreateUserSchema.safeParse(req.body);

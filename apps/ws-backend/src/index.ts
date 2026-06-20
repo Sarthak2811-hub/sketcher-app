@@ -2,8 +2,24 @@ import { WebSocketServer, WebSocket } from "ws";
 import jwt, { JwtPayload } from "jsonwebtoken";
 import { JWT_SECRET } from "@repo/backend-common/config";
 import { prismaClient } from "@repo/db/client";
+import { createServer } from "http";
 
-const wss = new WebSocketServer({ port: 8080 });
+const PORT = process.env.PORT || 8080;
+
+const server = createServer((req, res) => {
+  if (req.method === "GET" && (req.url === "/" || req.url === "/health")) {
+    res.writeHead(200, { "Content-Type": "application/json" });
+    res.end(JSON.stringify({
+      status: "healthy",
+      message: "Sketcher WebSocket Server is running. Please connect using WS/WSS protocols."
+    }));
+  } else {
+    res.writeHead(404, { "Content-Type": "text/plain" });
+    res.end("Not Found");
+  }
+});
+
+const wss = new WebSocketServer({ server });
 
 interface User{
   ws: WebSocket;
@@ -188,4 +204,8 @@ wss.on("connection", function connection(ws, request) {
       users.splice(index, 1);
     }
   });
+});
+
+server.listen(PORT, () => {
+  console.log(`[WS] Server is listening on port ${PORT}`);
 });

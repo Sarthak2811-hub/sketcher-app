@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { FRONTEND_URL } from "./config";
 
 export default function Home() {
   const [roomId, setRoomId] = useState("");
@@ -13,14 +14,14 @@ export default function Home() {
   const handleJoinCanvas = (targetId?: string) => {
     const id = targetId || roomId.trim();
     if (id) {
-      window.location.href = `http://localhost:3003/canvas/${encodeURIComponent(id.toLowerCase())}`;
+      window.location.href = `${FRONTEND_URL}/canvas/${encodeURIComponent(id.toLowerCase())}`;
     }
   };
 
   // Action: Create a new random room and open canvas
   const handleCreateRandomCanvas = () => {
     const randomId = Math.random().toString(36).substring(2, 9);
-    window.location.href = `http://localhost:3003/canvas/sketch-${randomId}`;
+    window.location.href = `${FRONTEND_URL}/canvas/sketch-${randomId}`;
   };
 
   return (
@@ -122,7 +123,7 @@ export default function Home() {
 
         <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
           <a
-            href="http://localhost:3003"
+            href={FRONTEND_URL}
             style={{
               fontSize: "13px",
               color: "rgba(255, 255, 255, 0.6)",

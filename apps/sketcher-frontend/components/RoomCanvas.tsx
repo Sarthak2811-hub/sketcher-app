@@ -4,6 +4,24 @@ import { useEffect, useState } from "react";
 import { Canvas } from "./Canvas";
 import axios from "axios";
 
+function getWsUrl(configuredUrl: string): string {
+    if (!configuredUrl) return "ws://localhost:8080";
+    let cleanUrl = configuredUrl.trim();
+    if (cleanUrl.startsWith("http://")) {
+        cleanUrl = cleanUrl.replace("http://", "ws://");
+    } else if (cleanUrl.startsWith("https://")) {
+        cleanUrl = cleanUrl.replace("https://", "wss://");
+    }
+    if (!cleanUrl.startsWith("ws://") && !cleanUrl.startsWith("wss://")) {
+        if (cleanUrl.includes("onrender.com") || cleanUrl.includes("vercel.app") || !cleanUrl.includes("localhost")) {
+            cleanUrl = "wss://" + cleanUrl;
+        } else {
+            cleanUrl = "ws://" + cleanUrl;
+        }
+    }
+    return cleanUrl;
+}
+
 // Global authentication promise lock to prevent concurrent/StrictMode race conditions in development
 let globalAuthPromise: Promise<string> | null = null;
 
@@ -83,7 +101,9 @@ export function RoomCanvas({roomId}:{
             console.log("[RoomCanvas] Connecting to WebSocket with token:", token ? (token.substring(0, 15) + "...") : "none");
             
             try {
-                const socketInstance = new WebSocket(`${WS_URL}?token=${token}`);
+                const resolvedWsUrl = getWsUrl(WS_URL);
+                console.log("[RoomCanvas] WebSocket URL resolved to:", resolvedWsUrl);
+                const socketInstance = new WebSocket(`${resolvedWsUrl}?token=${token}`);
                 ws = socketInstance;
                 
                 socketInstance.onopen = () => {

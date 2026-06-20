@@ -189,4 +189,7 @@ app.get("/room/:slug", async (req, res) => {
     }
 })
 
-app.listen(3002);
+const PORT = process.env.PORT || 3002;
+app.listen(PORT, () => {
+    console.log(`[HTTP] Server is listening on port ${PORT}`);
+});

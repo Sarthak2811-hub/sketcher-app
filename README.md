@@ -96,7 +96,7 @@ sketcher-app/
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/Sarthak2811-hub/sketcher-app.git
+git clone https://github.com/sarthakt28/sketcher-app.git
 cd sketcher-app
 ```
 

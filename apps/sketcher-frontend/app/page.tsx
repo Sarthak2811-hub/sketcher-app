@@ -316,7 +316,7 @@ function App() {
           </div>
 
           <div className="flex items-center gap-3">
-            <a href="https://github.com/Sarthak2811-hub/sketcher-app" target="_blank" rel="noopener noreferrer" className="w-9 h-9 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/10 border border-white/5 transition-colors text-white/40 hover:text-white">
+            <a href="https://github.com/sarthakt28/sketcher-app" target="_blank" rel="noopener noreferrer" className="w-9 h-9 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/10 border border-white/5 transition-colors text-white/40 hover:text-white">
               <GithubIcon className="w-4 h-4" />
             </a>
           </div>

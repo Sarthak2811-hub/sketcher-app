@@ -1,5 +1,5 @@
 import axios from "axios";
-import { HTTP_BACKEND } from "../config";
+import { HTTP_BACKEND } from "../app/config";
 
 export type Shape = ({
     type: "rect"
@@ -72,11 +72,12 @@ function getShapeBoundingBox(shape: Shape) {
             maxY: shape.y + fontSize
         };
     } else if (shape.type === "pencil" || shape.type === "eraser") {
-        if (shape.points.length === 0) return { minX: 0, maxX: 0, minY: 0, maxY: 0 };
-        let minX = shape.points[0].x;
-        let maxX = shape.points[0].x;
-        let minY = shape.points[0].y;
-        let maxY = shape.points[0].y;
+        const firstPoint = shape.points[0];
+        if (!firstPoint) return { minX: 0, maxX: 0, minY: 0, maxY: 0 };
+        let minX = firstPoint.x;
+        let maxX = firstPoint.x;
+        let minY = firstPoint.y;
+        let maxY = firstPoint.y;
         shape.points.forEach(p => {
             if (p.x < minX) minX = p.x;
             if (p.x > maxX) maxX = p.x;
@@ -117,6 +118,7 @@ function isPointInShape(px: number, py: number, shape: Shape): boolean {
         for (let i = 0; i < shape.points.length - 1; i++) {
             const p1 = shape.points[i];
             const p2 = shape.points[i + 1];
+            if (!p1 || !p2) continue;
             const l2 = Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2);
             if (l2 === 0) continue;
             let t = ((px - p1.x) * (p2.x - p1.x) + (py - p1.y) * (p2.y - p1.y)) / l2;
@@ -374,27 +376,29 @@ export function initDraw(
                 });
 
                 // Draw active pencil path if drawing
-                if (currentPencilPoints.length > 0) {
+                if (currentPencilPoints.length > 0 && currentPencilPoints[0]) {
                     offscreenCtx.globalCompositeOperation = "source-over";
                     offscreenCtx.strokeStyle = getActiveColor() || "#ffffff";
                     offscreenCtx.lineWidth = getActiveSize() || 2;
                     offscreenCtx.beginPath();
                     offscreenCtx.moveTo(currentPencilPoints[0].x, currentPencilPoints[0].y);
                     for (let i = 1; i < currentPencilPoints.length; i++) {
-                        offscreenCtx.lineTo(currentPencilPoints[i].x, currentPencilPoints[i].y);
+                        const p = currentPencilPoints[i];
+                        if (p) offscreenCtx.lineTo(p.x, p.y);
                     }
                     offscreenCtx.stroke();
                 }
 
                 // Draw active eraser path if erasing
-                if (currentEraserPoints.length > 0) {
+                if (currentEraserPoints.length > 0 && currentEraserPoints[0]) {
                     offscreenCtx.globalCompositeOperation = "destination-out";
                     offscreenCtx.strokeStyle = "rgba(0,0,0,1)";
                     offscreenCtx.lineWidth = getActiveSize() || 6;
                     offscreenCtx.beginPath();
                     offscreenCtx.moveTo(currentEraserPoints[0].x, currentEraserPoints[0].y);
                     for (let i = 1; i < currentEraserPoints.length; i++) {
-                        offscreenCtx.lineTo(currentEraserPoints[i].x, currentEraserPoints[i].y);
+                        const p = currentEraserPoints[i];
+                        if (p) offscreenCtx.lineTo(p.x, p.y);
                     }
                     offscreenCtx.stroke();
                 }
@@ -557,8 +561,9 @@ export function initDraw(
                     
                     let found: Shape | null = null;
                     for (let i = existingShapes.length - 1; i >= 0; i--) {
-                        if (isPointInShape(clickWorldX, clickWorldY, existingShapes[i])) {
-                            found = existingShapes[i];
+                        const s = existingShapes[i];
+                        if (s && isPointInShape(clickWorldX, clickWorldY, s)) {
+                            found = s;
                             break;
                         }
                     }
@@ -955,7 +960,8 @@ export function initDraw(
 
                         let hoverShape = false;
                         for (let i = existingShapes.length - 1; i >= 0; i--) {
-                            if (isPointInShape(currentWorldX, currentWorldY, existingShapes[i])) {
+                            const s = existingShapes[i];
+                            if (s && isPointInShape(currentWorldX, currentWorldY, s)) {
                                 hoverShape = true;
                                 break;
                             }
@@ -1114,7 +1120,9 @@ export function initDraw(
                 const shapeIndex = existingShapes.findIndex(s => s.id === lastId);
                 if (shapeIndex !== -1) {
                     const [removedShape] = existingShapes.splice(shapeIndex, 1);
-                    redoStack.push(removedShape);
+                    if (removedShape) {
+                        redoStack.push(removedShape);
+                    }
                     clearCanvas();
 
                     if (socket.readyState === WebSocket.OPEN) {
@@ -1249,11 +1257,12 @@ function drawShape(ctx: CanvasRenderingContext2D, shape: Shape) {
         ctx.closePath();
         ctx.stroke();
     } else if (shape.type === "pencil") {
-        if (shape.points.length > 0) {
+        if (shape.points.length > 0 && shape.points[0]) {
             ctx.beginPath();
             ctx.moveTo(shape.points[0].x, shape.points[0].y);
             for (let i = 1; i < shape.points.length; i++) {
-                ctx.lineTo(shape.points[i].x, shape.points[i].y);
+                const p = shape.points[i];
+                if (p) ctx.lineTo(p.x, p.y);
             }
             ctx.stroke();
         }
@@ -1266,11 +1275,12 @@ function drawShape(ctx: CanvasRenderingContext2D, shape: Shape) {
         ctx.fillText(shape.text, shape.x, shape.y);
     } else if (shape.type === "eraser") {
         ctx.strokeStyle = "#000000";
-        if (shape.points.length > 0) {
+        if (shape.points.length > 0 && shape.points[0]) {
             ctx.beginPath();
             ctx.moveTo(shape.points[0].x, shape.points[0].y);
             for (let i = 1; i < shape.points.length; i++) {
-                ctx.lineTo(shape.points[i].x, shape.points[i].y);
+                const p = shape.points[i];
+                if (p) ctx.lineTo(p.x, p.y);
             }
             ctx.stroke();
         }

@@ -1,620 +1,353 @@
 "use client";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { FRONTEND_URL } from "./config";
 
-export default function Home() {
-  const [roomId, setRoomId] = useState("");
-  const [isJoinHovered, setIsJoinHovered] = useState(false);
-  const [isCreateHovered, setIsCreateHovered] = useState(false);
-  const [showArchInfo, setShowArchInfo] = useState(false);
-  const router = useRouter();
+import { useState, useEffect } from 'react';
+import {
+  Pencil,
+  Shapes,
+  Share2,
+  Download,
+  Users,
+  Zap,
+  ArrowRight,
+  CheckCircle2,
+  Star,
+  Menu,
+  X,
+  MousePointer2,
+  Type,
+  Image,
+  Layers,
+  Sparkles,
+  Infinity,
+} from 'lucide-react';
 
-  // Primary Action: Join Canvas Room on Port 3003
-  const handleJoinCanvas = (targetId?: string) => {
-    const id = targetId || roomId.trim();
-    if (id) {
-      window.location.href = `${FRONTEND_URL}/canvas/${encodeURIComponent(id.toLowerCase())}`;
-    }
-  };
+function App() {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
-  // Action: Create a new random room and open canvas
-  const handleCreateRandomCanvas = () => {
-    const randomId = Math.random().toString(36).substring(2, 9);
-    window.location.href = `${FRONTEND_URL}/canvas/sketch-${randomId}`;
-  };
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener('scroll', onScroll);
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   return (
-    <div style={{
-      minHeight: "100vh",
-      background: "#030303",
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "space-between",
-      fontFamily: "var(--font-geist-sans), 'Inter', system-ui, sans-serif",
-      color: "#fff",
-      position: "relative",
-      overflow: "hidden",
-      padding: "24px 24px 48px 24px",
-      boxSizing: "border-box",
-    }}>
-      {/* CSS Styles for Grid Background & Animations */}
-      <style>{`
-        @keyframes float {
-          0%, 100% { transform: translateY(0px) rotate(0deg); }
-          50% { transform: translateY(-15px) rotate(1deg); }
-        }
-        @keyframes float-reverse {
-          0%, 100% { transform: translateY(0px) rotate(0deg); }
-          50% { transform: translateY(-12px) rotate(-1.5deg); }
-        }
-        @keyframes pulse-slow {
-          0%, 100% { opacity: 0.15; transform: scale(1) translate(-50%, -50%); }
-          50% { opacity: 0.25; transform: scale(1.08) translate(-50%, -50%); }
-        }
-        @keyframes draw {
-          to { stroke-dashoffset: 0; }
-        }
-        .float-el-1 { animation: float 6s ease-in-out infinite; }
-        .float-el-2 { animation: float-reverse 7s ease-in-out infinite; }
-        .float-el-3 { animation: float 5.5s ease-in-out infinite 0.5s; }
-        
-        /* Grid background pattern */
-        .grid-bg {
-          position: absolute;
-          inset: 0;
-          opacity: 0.15;
-          background-image: radial-gradient(rgba(99, 102, 241, 0.15) 1.5px, transparent 1.5px);
-          background-size: 28px 28px;
-          pointer-events: none;
-          z-index: 1;
-        }
-
-        /* Ambient glow spots */
-        .ambient-glow {
-          position: absolute;
-          top: 30%;
-          left: 50%;
-          width: 800px;
-          height: 500px;
-          background: radial-gradient(circle, rgba(99,102,241,0.12) 0%, rgba(139,92,246,0.06) 50%, transparent 70%);
-          transform: translate(-50%, -50%);
-          pointer-events: none;
-          z-index: 0;
-          animation: pulse-slow 10s ease-in-out infinite;
-        }
-      `}</style>
-
-      {/* Grid Pattern and Ambient Glows */}
-      <div className="grid-bg" />
-      <div className="ambient-glow" />
-
-      {/* Top Navbar */}
-      <header style={{
-        width: "100%",
-        maxWidth: "1100px",
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        zIndex: 10,
-        height: "64px",
-        borderBottom: "1px solid rgba(255, 255, 255, 0.05)",
-        marginBottom: "40px",
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <div style={{
-            width: "32px",
-            height: "32px",
-            borderRadius: "8px",
-            background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            boxShadow: "0 0 16px rgba(99,102,241,0.4)",
-          }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 20h9" />
-              <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-            </svg>
+    <div className="min-h-screen bg-[#0a0a0f] text-white overflow-x-hidden">
+      {/* Nav */}
+      <header
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'bg-[#0a0a0f]/90 backdrop-blur-md border-b border-white/5' : ''
+          }`}
+      >
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-sky-400 to-blue-600 flex items-center justify-center">
+              <Pencil className="w-4 h-4 text-white" />
+            </div>
+            <span className="text-lg font-semibold tracking-tight">Sketcher</span>
           </div>
-          <span style={{ fontSize: "18px", fontWeight: 700, letterSpacing: "-0.5px" }}>Sketcher</span>
+
+          <nav className="hidden md:flex items-center gap-8 text-sm text-white/60">
+            <a href="#features" className="hover:text-white transition-colors">Features</a>
+            <a href="#showcase" className="hover:text-white transition-colors">Showcase</a>
+          </nav>
+
+          <div className="hidden md:flex items-center gap-3">
+            <a href="/signin" className="text-sm text-white/60 hover:text-white transition-colors px-4 py-2">
+              Sign in
+            </a>
+            <a
+              href="/canvas"
+              className="text-sm bg-sky-500 hover:bg-sky-400 transition-colors px-4 py-2 rounded-lg font-medium"
+            >
+              Try for free
+            </a>
+          </div>
+
+          <button
+            className="md:hidden text-white/70 hover:text-white"
+            onClick={() => setMenuOpen(!menuOpen)}
+          >
+            {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
-          <a
-            href={FRONTEND_URL}
-            style={{
-              fontSize: "13px",
-              color: "rgba(255, 255, 255, 0.6)",
-              textDecoration: "none",
-              transition: "color 0.2s",
-            }}
-            onMouseEnter={e => e.currentTarget.style.color = "#fff"}
-            onMouseLeave={e => e.currentTarget.style.color = "rgba(255, 255, 255, 0.6)"}
-          >
-            Launch App
-          </a>
-          <a
-            href="https://github.com/sarthakt28/sketcher-app"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              padding: "6px 12px",
-              borderRadius: "8px",
-              background: "rgba(255, 255, 255, 0.05)",
-              border: "1px solid rgba(255, 255, 255, 0.08)",
-              fontSize: "12px",
-              fontWeight: 500,
-              color: "rgba(255, 255, 255, 0.8)",
-              textDecoration: "none",
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
-              transition: "all 0.2s",
-            }}
-            onMouseEnter={e => {
-              e.currentTarget.style.background = "rgba(255, 255, 255, 0.1)";
-              e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.15)";
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.background = "rgba(255, 255, 255, 0.05)";
-              e.currentTarget.style.borderColor = "rgba(255, 255, 255, 0.08)";
-            }}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.2c3-.3 6-1.5 6-6.5a4.6 4.6 0 0 0-1.3-3.2 4.2 4.2 0 0 0-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3 0 0 0-6.2 0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2 0 0 0-.1 3.2A4.6 4.6 0 0 0 4 9.5c0 5 3 6.2 6 6.5a4.8 4.8 0 0 0-1 3.2v4" />
-            </svg>
-            GitHub
-          </a>
-        </div>
+        {menuOpen && (
+          <div className="md:hidden bg-[#0e0e18] border-t border-white/5 px-6 py-4 flex flex-col gap-4 text-sm">
+            <a href="#features" className="text-white/60 hover:text-white" onClick={() => setMenuOpen(false)}>Features</a>
+            <a href="#showcase" className="text-white/60 hover:text-white" onClick={() => setMenuOpen(false)}>Showcase</a>
+            <div className="pt-2 flex flex-col gap-2">
+              <a href="/signin" className="text-center py-2 text-white/60 hover:text-white">Sign in</a>
+              <a href="/canvas" className="text-center py-2 bg-sky-500 hover:bg-sky-400 rounded-lg font-medium">Try for free</a>
+            </div>
+          </div>
+        )}
       </header>
 
-      {/* Floating Canvas Decorative Elements - Visual Wow Factor */}
-      {/* Floating Element Left: Rectangle with arrow & text */}
-      <div className="float-el-1" style={{
-        position: "absolute",
-        left: "8%",
-        top: "28%",
-        zIndex: 5,
-        display: "none",
-        flexDirection: "column",
-        gap: "10px",
-        pointerEvents: "none",
-        transformOrigin: "center",
-      }}>
-        {/* Responsive display: visible only on larger screens */}
-        <style>{`
-          @media (min-width: 1024px) {
-            .float-el-1 { display: flex !important; }
-            .float-el-2 { display: flex !important; }
-          }
-        `}</style>
-
-        {/* Hand-drawn style SVG Rectangle */}
-        <svg width="180" height="100" viewBox="0 0 180 100" style={{ filter: "drop-shadow(0 10px 20px rgba(99,102,241,0.15))" }}>
-          {/* Main rectangle path (slightly irregular/hand-drawn) */}
-          <path
-            d="M 10 12 C 50 8, 130 14, 170 10 C 172 40, 168 70, 172 90 C 130 92, 50 88, 8 92 C 6 60, 12 30, 10 12"
-            fill="none"
-            stroke="#6366f1"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeDasharray="500"
-            strokeDashoffset="500"
-            style={{ animation: "draw 2s ease-out forwards" }}
-          />
-          <text x="90" y="55" textAnchor="middle" fill="#a5b4fc" fontSize="13" fontFamily="'Comic Sans MS', cursive, sans-serif" fontWeight="bold">
-            Infinite Canvas
-          </text>
-        </svg>
-
-        {/* Squiggly indicator line */}
-        <svg width="80" height="60" viewBox="0 0 80 60" style={{ marginLeft: "60px", opacity: 0.6 }}>
-          <path
-            d="M 10 10 Q 40 45 70 15"
-            fill="none"
-            stroke="#a5b4fc"
-            strokeWidth="2"
-            strokeDasharray="5 5"
-          />
-          <polygon points="70,15 63,12 65,19" fill="#a5b4fc" />
-        </svg>
-      </div>
-
-      {/* Floating Element Right: Sticky Note & Circle */}
-      <div className="float-el-2" style={{
-        position: "absolute",
-        right: "6%",
-        top: "32%",
-        zIndex: 5,
-        display: "none",
-        flexDirection: "column",
-        alignItems: "center",
-        gap: "12px",
-        pointerEvents: "none",
-        transformOrigin: "center",
-      }}>
-        {/* Sticky note */}
-        <div style={{
-          width: "140px",
-          height: "140px",
-          background: "linear-gradient(135deg, #fef08a, #fde047)",
-          color: "#422006",
-          padding: "16px",
-          boxShadow: "5px 15px 30px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.2)",
-          transform: "rotate(6deg)",
-          fontFamily: "'Comic Sans MS', cursive, sans-serif",
-          fontSize: "12px",
-          fontWeight: 700,
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "space-between",
-          borderRadius: "2px",
-          borderBottomRightRadius: "20px 2px",
-        }}>
-          <p style={{ margin: 0, lineHeight: 1.4 }}>💡 Real-time synchronization is fully active!</p>
-          <div style={{ display: "flex", justifyContent: "flex-end", fontSize: "10px", opacity: 0.6 }}>
-            — Dev
-          </div>
+      {/* Hero */}
+      <section className="relative pt-32 pb-24 px-6 text-center overflow-hidden">
+        {/* Background glow */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[500px] bg-sky-500/10 rounded-full blur-[120px]" />
+          <div className="absolute top-1/2 left-1/4 w-[300px] h-[300px] bg-blue-600/8 rounded-full blur-[80px]" />
+          <div className="absolute top-1/2 right-1/4 w-[300px] h-[300px] bg-cyan-400/8 rounded-full blur-[80px]" />
         </div>
 
-        {/* Hand-drawn style SVG Circle */}
-        <svg width="120" height="120" viewBox="0 0 120 120" style={{ transform: "rotate(-10deg)", marginTop: "20px", filter: "drop-shadow(0 10px 20px rgba(16,185,129,0.15))" }}>
-          <path
-            d="M 60 10 C 90 8, 112 30, 110 60 C 108 90, 88 112, 58 110 C 28 108, 8 88, 10 58 C 12 28, 30 12, 60 10 Z"
-            fill="none"
-            stroke="#10b981"
-            strokeWidth="2.5"
-            strokeLinecap="round"
-            strokeDasharray="400"
-            strokeDashoffset="400"
-            style={{ animation: "draw 2.5s ease-out forwards 0.3s" }}
-          />
-          <text x="60" y="65" textAnchor="middle" fill="#34d399" fontSize="12" fontFamily="'Comic Sans MS', cursive, sans-serif" fontWeight="bold">
-            Live Sync
-          </text>
-        </svg>
-      </div>
+        {/* Grid background */}
+        <div
+          className="absolute inset-0 pointer-events-none opacity-[0.03]"
+          style={{
+            backgroundImage:
+              'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)',
+            backgroundSize: '60px 60px',
+          }}
+        />
 
-      {/* Main Container */}
-      <main style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        width: "100%",
-        maxWidth: "600px",
-        zIndex: 10,
-        textAlign: "center",
-      }}>
-        
-        {/* Glow-pulse Badge */}
-        <div style={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: "8px",
-          padding: "6px 14px",
-          borderRadius: "999px",
-          background: "rgba(99,102,241,0.08)",
-          border: "1px solid rgba(99,102,241,0.18)",
-          fontSize: "12px",
-          fontWeight: 600,
-          color: "#a5b4fc",
-          letterSpacing: "0.5px",
-          marginBottom: "24px",
-          backdropFilter: "blur(4px)",
-        }}>
-          <span style={{
-            width: "6px",
-            height: "6px",
-            borderRadius: "50%",
-            background: "#6366f1",
-            display: "inline-block",
-            boxShadow: "0 0 10px #6366f1",
-            animation: "pulse 2s infinite"
-          }} />
-          Collaborative Digital Canvas
-        </div>
-
-        {/* Hero Headlines */}
-        <h1 style={{
-          fontSize: "clamp(38px, 6.5vw, 56px)",
-          fontWeight: 800,
-          lineHeight: 1.1,
-          letterSpacing: "-1.5px",
-          marginBottom: "16px",
-          background: "linear-gradient(180deg, #ffffff 30%, rgba(255,255,255,0.6) 100%)",
-          WebkitBackgroundClip: "text",
-          WebkitTextFillColor: "transparent",
-          backgroundClip: "text",
-        }}>
-          Where Ideas Take Shape.
-        </h1>
-
-        <p style={{
-          fontSize: "15px",
-          color: "rgba(255, 255, 255, 0.45)",
-          maxWidth: "460px",
-          margin: "0 auto 36px auto",
-          lineHeight: 1.6,
-        }}>
-          Sketcher lets you draw, plan, and collaborate with others in real-time. Enter a room ID to start instantly, or spin up a new private canvas.
-        </p>
-
-        {/* Interactive Join / Create Card */}
-        <div style={{
-          width: "100%",
-          padding: "32px",
-          borderRadius: "24px",
-          background: "rgba(20, 20, 25, 0.65)",
-          border: "1px solid rgba(255, 255, 255, 0.08)",
-          backdropFilter: "blur(24px)",
-          boxShadow: "0 30px 70px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255, 255, 255, 0.05)",
-          display: "flex",
-          flexDirection: "column",
-          gap: "20px",
-          boxSizing: "border-box",
-        }}>
-          
-          <div style={{ display: "flex", flexDirection: "column", gap: "8px", alignItems: "flex-start" }}>
-            <label style={{
-              fontSize: "11px",
-              color: "rgba(255, 255, 255, 0.4)",
-              fontWeight: 700,
-              letterSpacing: "1px",
-              textTransform: "uppercase"
-            }}>
-              Room Identification
-            </label>
-            <input
-              value={roomId}
-              onChange={(e) => setRoomId(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") handleJoinCanvas();
-              }}
-              type="text"
-              placeholder="Enter room name (e.g., design-sprint)..."
-              style={{
-                width: "100%",
-                padding: "16px",
-                borderRadius: "14px",
-                border: "1px solid rgba(255, 255, 255, 0.1)",
-                background: "rgba(255, 255, 255, 0.04)",
-                color: "#fff",
-                fontSize: "15px",
-                fontWeight: 500,
-                outline: "none",
-                fontFamily: "inherit",
-                transition: "all 0.2s ease",
-                boxSizing: "border-box",
-              }}
-              onFocus={e => {
-                e.target.style.borderColor = "rgba(99, 102, 241, 0.6)";
-                e.target.style.background = "rgba(255, 255, 255, 0.07)";
-                e.target.style.boxShadow = "0 0 0 4px rgba(99, 102, 241, 0.15)";
-              }}
-              onBlur={e => {
-                e.target.style.borderColor = "rgba(255, 255, 255, 0.1)";
-                e.target.style.background = "rgba(255, 255, 255, 0.04)";
-                e.target.style.boxShadow = "none";
-              }}
-            />
+        <div className="relative max-w-5xl mx-auto">
+          <div className="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-1.5 text-sm text-white/60 mb-8">
+            <Sparkles className="w-3.5 h-3.5 text-sky-400" />
+            <span>Open-source diagramming, reimagined</span>
           </div>
 
-          {/* Action Row for the Typed Room ID */}
-          <div style={{
-            width: "100%",
-          }}>
-            <button
-              onClick={() => handleJoinCanvas()}
-              onMouseEnter={() => setIsJoinHovered(true)}
-              onMouseLeave={() => setIsJoinHovered(false)}
-              disabled={!roomId.trim()}
-              style={{
-                width: "100%",
-                padding: "16px",
-                borderRadius: "14px",
-                border: "none",
-                background: !roomId.trim() 
-                  ? "rgba(255, 255, 255, 0.03)" 
-                  : isJoinHovered
-                    ? "linear-gradient(135deg, #4f46e5, #7c3aed)"
-                    : "linear-gradient(135deg, #6366f1, #8b5cf6)",
-                color: !roomId.trim() ? "rgba(255,255,255,0.25)" : "#fff",
-                fontWeight: 600,
-                fontSize: "14px",
-                cursor: roomId.trim() ? "pointer" : "not-allowed",
-                fontFamily: "inherit",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "8px",
-                boxShadow: roomId.trim() && isJoinHovered
-                  ? "0 10px 25px rgba(99,102,241,0.45)"
-                  : "none",
-                transform: roomId.trim() && isJoinHovered ? "translateY(-1px)" : "translateY(0)",
-                transition: "all 0.2s ease",
-              }}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
-              </svg>
-              Draw on Canvas 🎨
-            </button>
-          </div>
-
-          <div style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "12px",
-            color: "rgba(255,255,255,0.12)",
-            fontSize: "11px",
-            margin: "4px 0",
-          }}>
-            <div style={{ flex: 1, height: "1px", background: "rgba(255,255,255,0.06)" }} />
-            OR CREATE A NEW SPACE
-            <div style={{ flex: 1, height: "1px", background: "rgba(255,255,255,0.06)" }} />
-          </div>
-
-          {/* Random Space Button */}
-          <button
-            onClick={handleCreateRandomCanvas}
-            onMouseEnter={() => setIsCreateHovered(true)}
-            onMouseLeave={() => setIsCreateHovered(false)}
-            style={{
-              width: "100%",
-              padding: "16px",
-              borderRadius: "14px",
-              border: "1px dashed rgba(99, 102, 241, 0.4)",
-              background: isCreateHovered ? "rgba(99, 102, 241, 0.06)" : "rgba(99, 102, 241, 0.02)",
-              color: "#a5b4fc",
-              fontWeight: 600,
-              fontSize: "14px",
-              cursor: "pointer",
-              fontFamily: "inherit",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: "8px",
-              boxShadow: isCreateHovered ? "0 4px 20px rgba(99, 102, 241, 0.1)" : "none",
-              transition: "all 0.2s ease",
-            }}
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 5v14M5 12h14" />
-            </svg>
-            Start a New Sketching Board ✨
-          </button>
-        </div>
-
-        {/* Feature quick badges */}
-        <div style={{
-          display: "flex",
-          justifyContent: "center",
-          gap: "10px",
-          flexWrap: "wrap",
-          marginTop: "32px",
-          width: "100%",
-        }}>
-          {[
-            { text: "No Sign-up Needed", icon: "✨" },
-            { text: "Zero Lag WebSocket Sync", icon: "⚡" },
-            { text: "Export SVG / PNG", icon: "💾" },
-          ].map((item, idx) => (
-            <div
-              key={idx}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "6px",
-                padding: "6px 12px",
-                borderRadius: "20px",
-                background: "rgba(255, 255, 255, 0.03)",
-                border: "1px solid rgba(255, 255, 255, 0.05)",
-                fontSize: "12px",
-                color: "rgba(255,255,255,0.45)",
-                fontWeight: 500,
-              }}
-            >
-              <span>{item.icon}</span>
-              <span>{item.text}</span>
-            </div>
-          ))}
-        </div>
-
-        {/* Architecture Explain Accordion (to address user's port confusion elegantly) */}
-        <div style={{
-          width: "100%",
-          marginTop: "24px",
-          borderRadius: "16px",
-          border: "1px solid rgba(255,255,255,0.05)",
-          background: "rgba(10, 10, 12, 0.5)",
-          overflow: "hidden",
-          textAlign: "left",
-          boxSizing: "border-box",
-        }}>
-          <button
-            onClick={() => setShowArchInfo(!showArchInfo)}
-            style={{
-              width: "100%",
-              padding: "14px 18px",
-              background: "transparent",
-              border: "none",
-              color: "rgba(255, 255, 255, 0.5)",
-              fontSize: "12px",
-              fontWeight: 600,
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              cursor: "pointer",
-              outline: "none",
-              fontFamily: "inherit",
-            }}
-          >
-            <span>ℹ️ Architecture & Port Information</span>
-            <span style={{
-              transform: showArchInfo ? "rotate(180deg)" : "rotate(0deg)",
-              transition: "transform 0.2s ease",
-              fontSize: "10px"
-            }}>
-              ▼
+          <h1 className="text-5xl md:text-7xl font-bold tracking-tight leading-[1.1] mb-6">
+            Draw ideas that{' '}
+            <span className="bg-gradient-to-r from-sky-400 via-blue-400 to-cyan-400 bg-clip-text text-transparent">
+              come alive
             </span>
-          </button>
-          
-          {showArchInfo && (
-            <div style={{
-              padding: "0 18px 18px 18px",
-              fontSize: "12px",
-              color: "rgba(255,255,255,0.35)",
-              lineHeight: 1.6,
-              borderTop: "1px solid rgba(255, 255, 255, 0.04)",
-              background: "rgba(0, 0, 0, 0.2)",
-            }}>
-              <p style={{ marginTop: "12px", marginBottom: "8px" }}>
-                This is a <strong>Turborepo Monorepo</strong> with separate modular servers running on different ports:
-              </p>
-              <ul style={{ paddingLeft: "20px", margin: "0 0 12px 0", display: "flex", flexDirection: "column", gap: "4px" }}>
-                <li><strong style={{ color: "rgba(255,255,255,0.7)" }}>Port 3000 (web)</strong>: The landing lobby and basic text-based room communication.</li>
-                <li><strong style={{ color: "rgba(255,255,255,0.7)" }}>Port 3003 (sketcher-frontend)</strong>: The premium drawing canvas with an infinite whiteboard.</li>
-                <li><strong style={{ color: "rgba(255,255,255,0.7)" }}>Port 3002 (http-backend)</strong> &amp; <strong style={{ color: "rgba(255,255,255,0.7)" }}>Port 8080 (ws-backend)</strong>: API endpoints and WebSockets.</li>
-              </ul>
-              <p style={{ margin: 0 }}>
-                Clicking <strong>Draw on Canvas</strong> will instantly launch the canvas app on port 3003, while <strong>Join Chat</strong> runs the chat room locally on this port.
-              </p>
-            </div>
-          )}
+          </h1>
+
+          <p className="text-lg md:text-xl text-white/50 max-w-2xl mx-auto leading-relaxed mb-10">
+            Sketcher is a fast, beautiful canvas for brainstorming, wireframing, and
+            diagramming — built for those who think visually.
+          </p>
+
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <a
+              href="/signup"
+              className="group flex items-center gap-2 bg-sky-500 hover:bg-sky-400 transition-all px-6 py-3 rounded-xl font-semibold text-sm shadow-lg shadow-sky-500/20"
+            >
+              Start sketching
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+            </a>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-center gap-6 mt-10 text-sm text-white/30">
+            <span className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-sky-400" /> No sign-up required</span>
+            <span className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-sky-400" /> Completely free</span>
+            <span className="flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-sky-400" /> Open source</span>
+          </div>
         </div>
 
-      </main>
+        {/* Hero canvas mockup */}
+        <div className="relative max-w-5xl mx-auto mt-16">
+          <div className="rounded-2xl border border-white/10 bg-[#0e0e18] overflow-hidden shadow-2xl shadow-black/60">
+            {/* Toolbar */}
+            <div className="flex items-center gap-0.5 p-3 bg-[#13131f] border-b border-white/5">
+              <div className="w-3 h-3 rounded-full bg-red-500/80 mr-1" />
+              <div className="w-3 h-3 rounded-full bg-yellow-500/80 mr-1" />
+              <div className="w-3 h-3 rounded-full bg-green-500/80 mr-4" />
+              {[MousePointer2, Pencil, Shapes, Type, Image].map((Icon, i) => (
+                <button
+                  key={i}
+                  className={`p-2 rounded-lg transition-colors ${i === 1 ? 'bg-sky-500/20 text-sky-400' : 'text-white/30 hover:text-white/60 hover:bg-white/5'}`}
+                >
+                  <Icon className="w-4 h-4" />
+                </button>
+              ))}
+            </div>
+
+            {/* Canvas area */}
+            <div className="relative h-[380px] bg-[#0c0c16] overflow-hidden">
+              <div
+                className="absolute inset-0 opacity-[0.04]"
+                style={{
+                  backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)',
+                  backgroundSize: '32px 32px',
+                }}
+              />
+
+              {/* Sketch elements */}
+              <svg className="absolute inset-0 w-full h-full" viewBox="0 0 900 380">
+                <defs>
+                  <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+                    <path d="M0,0 L0,6 L9,3 z" fill="#475569" />
+                  </marker>
+                </defs>
+
+                <rect x="80" y="80" width="180" height="110" rx="8" fill="none" stroke="#38bdf8" strokeWidth="2" strokeDasharray="6 3" opacity="0.7" />
+                <text x="170" y="141" textAnchor="middle" fill="#94a3b8" fontSize="13" fontFamily="sans-serif">Component A</text>
+
+                <path d="M260 135 L340 135" stroke="#475569" strokeWidth="1.5" markerEnd="url(#arrow)" />
+
+                <rect x="340" y="80" width="180" height="110" rx="8" fill="none" stroke="#38bdf8" strokeWidth="2" opacity="0.5" />
+                <text x="430" y="141" textAnchor="middle" fill="#94a3b8" fontSize="13" fontFamily="sans-serif">Component B</text>
+
+                <path d="M560 100 Q580 80 600 100 Q620 120 640 95 Q660 70 680 100" fill="none" stroke="#f472b6" strokeWidth="2" opacity="0.6" />
+
+                <rect x="560" y="160" width="150" height="90" rx="4" fill="#fef08a" opacity="0.08" />
+                <text x="635" y="200" textAnchor="middle" fill="#fef08a" fontSize="11" fontFamily="sans-serif" opacity="0.8">Design notes</text>
+                <text x="635" y="218" textAnchor="middle" fill="#fef08a" fontSize="10" fontFamily="sans-serif" opacity="0.5">Refine border radius</text>
+
+                <ellipse cx="170" cy="280" rx="70" ry="22" fill="none" stroke="#34d399" strokeWidth="1.5" opacity="0.6" />
+                <rect x="100" y="280" width="140" height="40" fill="none" stroke="#34d399" strokeWidth="1.5" opacity="0.6" />
+                <ellipse cx="170" cy="320" rx="70" ry="22" fill="none" stroke="#34d399" strokeWidth="1.5" opacity="0.6" />
+                <text x="170" y="303" textAnchor="middle" fill="#6ee7b7" fontSize="11" fontFamily="sans-serif" opacity="0.8">Database</text>
+
+                <path d="M170 258 L170 135 L260 135" stroke="#475569" strokeWidth="1.5" strokeDasharray="4 2" opacity="0.5" />
+
+                <g transform="translate(430 220)">
+                  <path d="M0 0 L0 18 L5 13 L9 20 L11 19 L7 12 L14 12 Z" fill="white" opacity="0.9" />
+                  <circle cx="0" cy="0" r="3" fill="#38bdf8" opacity="0.6" />
+                </g>
+              </svg>
+            </div>
+          </div>
+          <div className="absolute -bottom-px left-0 right-0 h-24 bg-gradient-to-t from-[#0a0a0f] to-transparent pointer-events-none" />
+        </div>
+      </section>
+
+
+
+      {/* Features */}
+      <section id="features" className="py-28 px-6">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <p className="text-sky-400 text-sm font-medium uppercase tracking-widest mb-3">Features</p>
+            <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">
+              Everything you need to sketch
+            </h2>
+            <p className="text-white/40 text-lg max-w-xl mx-auto">
+              Powerful tools that feel natural. From rough ideas to polished diagrams in seconds.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            {[
+              { icon: Infinity, title: 'Infinite Canvas', desc: 'Scroll to zoom, pan to explore. An endless drawing board that expands in every direction with your ideas.', color: 'sky' },
+              { icon: Users, title: 'Real-Time Collaboration', desc: 'Draw with your team live. Share the URL and watch changes sync instantly with zero latency via WebSockets.', color: 'sky' },
+              { icon: Share2, title: 'One-Click Sharing', desc: 'Share your workspace instantly. One click copies the direct room URL to your clipboard for instant collaboration.', color: 'blue' },
+              { icon: Pencil, title: 'Freehand Drawing', desc: 'Draw naturally with a stylus or mouse. Smart shape recognition converts rough sketches into clean geometry.', color: 'sky' },
+              { icon: Download, title: 'Export Anywhere', desc: 'Export to PNG, SVG, or JSON. Drop your diagrams into any doc or presentation.', color: 'sky' },
+              { icon: Zap, title: 'Blazing Fast', desc: 'Built on a performant rendering engine. Handles thousands of elements without breaking a sweat.', color: 'blue' },
+            ].map(({ icon: Icon, title, desc }) => (
+              <div
+                key={title}
+                className="group bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.07] hover:border-white/[0.12] rounded-2xl p-6 transition-all duration-300"
+              >
+                <div className="w-10 h-10 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center mb-4">
+                  <Icon className="w-5 h-5 text-sky-400" />
+                </div>
+                <h3 className="font-semibold mb-2">{title}</h3>
+                <p className="text-sm text-white/40 leading-relaxed">{desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Showcase */}
+      <section id="showcase" className="py-24 px-6 overflow-hidden">
+        <div className="max-w-6xl mx-auto">
+
+
+          {/* Export row */}
+          <div className="grid md:grid-cols-2 gap-16 items-center">
+            <div className="order-2 md:order-1 relative">
+              <div className="rounded-2xl border border-white/10 bg-[#0e0e18] p-5 shadow-2xl shadow-black/40">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-xs text-white/40 font-medium uppercase tracking-wider">Export options</span>
+                </div>
+                <div className="grid grid-cols-3 gap-3 mb-4">
+                  {[
+                    { fmt: 'PNG', desc: 'High resolution', color: '#38bdf8' },
+                    { fmt: 'SVG', desc: 'Vector format', color: '#2dd4bf' },
+                    { fmt: 'JSON', desc: 'Raw data', color: '#60a5fa' },
+                  ].map(({ fmt, desc, color }) => (
+                    <div key={fmt} className="rounded-xl p-4 text-center" style={{ background: `${color}12`, border: `1px solid ${color}30` }}>
+                      <div className="font-bold text-lg mb-1" style={{ color }}>{fmt}</div>
+                      <div className="text-white/30 text-xs">{desc}</div>
+                    </div>
+                  ))}
+                </div>
+                <div className="bg-white/5 rounded-xl p-4 flex items-center justify-between">
+                  <div>
+                    <div className="text-sm font-medium mb-0.5">flowchart-v2.png</div>
+                    <div className="text-xs text-white/30">2048 x 1536 · 340 KB</div>
+                  </div>
+                  <button className="bg-sky-500/20 hover:bg-sky-500/30 border border-sky-500/30 text-sky-400 text-xs px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5">
+                    <Download className="w-3.5 h-3.5" /> Download
+                  </button>
+                </div>
+              </div>
+              <div className="absolute -bottom-4 -left-4 w-32 h-32 bg-teal-500/10 rounded-full blur-2xl" />
+            </div>
+            <div className="order-1 md:order-2">
+              <p className="text-teal-400 text-sm font-medium uppercase tracking-widest mb-3">Export</p>
+              <h2 className="text-4xl font-bold tracking-tight mb-5 leading-tight">
+                Take your diagrams anywhere
+              </h2>
+              <p className="text-white/40 text-lg leading-relaxed mb-8">
+                Export pixel-perfect images or developer-ready SVGs. Copy-paste straight into Notion, Confluence, or your favorite doc editor.
+              </p>
+              <ul className="space-y-3">
+                {['PNG, SVG & JSON exports', 'Copy as image shortcut', 'Embed in Notion & Confluence', 'Dark and light backgrounds'].map((item) => (
+                  <li key={item} className="flex items-center gap-3 text-sm text-white/60">
+                    <CheckCircle2 className="w-4 h-4 text-teal-400 flex-shrink-0" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+
+
+
 
       {/* Footer */}
-      <footer style={{
-        width: "100%",
-        maxWidth: "1100px",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        gap: "12px",
-        marginTop: "60px",
-        borderTop: "1px solid rgba(255, 255, 255, 0.05)",
-        paddingTop: "24px",
-        zIndex: 10,
-      }}>
-        <p style={{
-          fontSize: "11px",
-          color: "rgba(255, 255, 255, 0.2)",
-          margin: 0,
-        }}>
-          Built with Next.js 16 · Turborepo · WebSockets · Prisma Client · SQLite
-        </p>
-        <p style={{
-          fontSize: "11px",
-          color: "rgba(255, 255, 255, 0.12)",
-          margin: 0,
-        }}>
-          © 2026 Sketcher. Open source and free to use.
-        </p>
+      <footer className="border-t border-white/5 py-12 px-6">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-sky-400 to-blue-600 flex items-center justify-center">
+              <Pencil className="w-3.5 h-3.5 text-white" />
+            </div>
+            <span className="font-semibold">Sketcher</span>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <a href="https://github.com/sarthakt28/sketcher-app" target="_blank" rel="noopener noreferrer" className="w-9 h-9 flex items-center justify-center rounded-lg bg-white/5 hover:bg-white/10 border border-white/5 transition-colors text-white/40 hover:text-white">
+              <GithubIcon className="w-4 h-4" />
+            </a>
+          </div>
+        </div>
+        <div className="max-w-7xl mx-auto mt-8 pt-8 border-t border-white/5 text-center text-xs text-white/20">
+          2026 © Sketcher. All rights reserved.
+        </div>
       </footer>
     </div>
   );
 }
+
+function GithubIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      {...props}
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.2c3-.3 6-1.5 6-6.5a4.6 4.6 0 0 0-1.3-3.2 4.2 4.2 0 0 0-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3 0 0 0-6.2 0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2 0 0 0-.1 3.2A4.6 4.6 0 0 0 4 9.5c0 5 3 6.2 6 6.5a4.8 4.8 0 0 0-1 3.2v4" />
+    </svg>
+  );
+}
+
+
+
+export default App;

@@ -5,7 +5,16 @@
     "build": {
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
-      "outputs": [".next/**", "!.next/cache/**"]
+      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
+    },
+    "@repo/eslint-config#build": {
+      "outputs": []
+    },
+    "@repo/typescript-config#build": {
+      "outputs": []
+    },
+    "@repo/ui#build": {
+      "outputs": []
     },
     "lint": {
       "dependsOn": ["^lint"]

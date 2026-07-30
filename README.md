@@ -1,98 +1,107 @@
 # 🎨 Sketcher — Real-Time Collaborative Whiteboard
 
-**Sketcher** is a premium, real-time collaborative whiteboard and diagramming tool. Draw together with others on a fully infinite canvas with smooth zoom and pan, live WebSocket sync, rich shape tools, undo/redo, and one-click room sharing.
+[![Turborepo](https://img.shields.io/badge/Turborepo-v2.9-EF4444?style=flat-square&logo=turborepo&logoColor=white)](https://turbo.build/)
+[![Next.js](https://img.shields.io/badge/Next.js-v16-000000?style=flat-square&logo=next.js&logoColor=white)](https://nextjs.org/)
+[![React](https://img.shields.io/badge/React-v19-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-v5.9-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Express](https://img.shields.io/badge/Express.js-v4.21-000000?style=flat-square&logo=express&logoColor=white)](https://expressjs.com/)
+[![WebSocket](https://img.shields.io/badge/WebSockets-ws-010101?style=flat-square&logo=socketdotio&logoColor=white)](https://github.com/websockets/ws)
+[![Prisma](https://img.shields.io/badge/Prisma-v5.22-2D3748?style=flat-square&logo=prisma&logoColor=white)](https://www.prisma.io/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-v16-4169E1?style=flat-square&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![pnpm](https://img.shields.io/badge/pnpm-v10-F69220?style=flat-square&logo=pnpm&logoColor=white)](https://pnpm.io/)
 
-The codebase is a high-performance **Turborepo monorepo** built with **Next.js**, **Node.js**, **WebSockets**, and **Prisma ORM**.
+**Sketcher** is a premium, real-time collaborative whiteboard and diagramming application. Draw together with teammates on a fully infinite canvas featuring sub-millisecond smooth zooming and panning, WebSocket synchronization, comprehensive geometric shape tools, undo/redo state history, and single-click room sharing.
+
+The codebase is built as a high-performance **Turborepo monorepo** with **Next.js 16**, **Express.js**, **WebSockets (`ws`)**, **Prisma ORM**, and **PostgreSQL**.
 
 ---
 
 ## ✨ Features
 
-### 🖼️ Infinite Canvas
-- **Pan**: Drag with the **Hand tool**, hold **Spacebar + Left Click**, or use the **Middle Mouse Button**.
-- **Zoom**: Scroll wheel or bottom-left zoom controls — smoothly scales from `10%` to `2000%` relative to your cursor position.
-- **Dynamic Dot Grid**: Tiled dot grid that scales and pans natively with zero latency.
-- **Reset View**: One-click recenter button in the bottom-left controls.
+### 🖼️ Infinite Canvas Engine
+- **Pan Navigation**: Drag with the **Hand tool**, hold **Spacebar + Left Click**, or use **Middle Mouse Drag**.
+- **Responsive Zoom**: Mouse scroll wheel or bottom-left zoom controls — smooth scaling from `10%` to `2000%` centered at your cursor.
+- **Dynamic Dot Grid**: Hardware-accelerated background dot grid pattern that pans and zooms seamlessly.
+- **One-Click Recenter**: Reset zoom and camera view to original canvas origin `(0, 0)`.
 
-### 🎨 Drawing Tools
-| Tool | Description |
-| :--- | :--- |
-| ✏️ Pencil | Freehand drawing with smooth strokes |
-| ▭ Rectangle | Draw axis-aligned rectangles |
-| ○ Circle | Draw circles from center point |
-| → Arrow | Draw directional arrows with arrowheads |
-| △ Triangle | Draw filled outline triangles |
-| T Text | Place and edit text labels on the canvas |
-| ◌ Eraser | Custom adjustable eraser brush |
-| ↖ Select | Select, drag, and resize any shape with bounding handles |
-| ✋ Pan | Hand tool to pan the canvas |
+### 🎨 Drawing & Formatting Tools
+| Tool | Symbol | Description |
+| :--- | :---: | :--- |
+| **Pencil** | ✏️ | Freehand smooth stroke drawing |
+| **Rectangle** | ▭ | Axis-aligned box and square shapes |
+| **Circle** | ○ | Centered circle and ellipse drawing |
+| **Arrow** | → | Directional arrows with calculated head tips |
+| **Triangle** | △ | Geometric triangle outlines |
+| **Text** | T | Dynamic inline canvas text labels |
+| **Eraser** | ◌ | Custom canvas eraser tool |
+| **Select** | ↖ | Select, drag, translate, and resize drawn shapes |
+| **Hand** | ✋ | Pan tool to move across the infinite canvas |
 
-### 🎨 Styling
-- **8 colors**: White, Red, Orange, Yellow, Green, Blue, Purple, Pink
-- **4 stroke sizes**: Thin (2px), Medium (6px), Thick (12px), Extra Thick (20px)
+### 🌈 Style System
+- **Color Palette (8 Colors)**: White (`#FFFFFF`), Red (`#EF4444`), Orange (`#F97316`), Yellow (`#EAB308`), Green (`#22C55E`), Blue (`#3B82F6`), Purple (`#A855F7`), Pink (`#EC4899`).
+- **Stroke Widths (4 Levels)**: Thin (`2px`), Medium (`6px`), Thick (`12px`), Extra Thick (`20px`).
 
-### 👥 Multiplayer Collaboration
-- Real-time sync of all drawing actions over standard **WebSockets**
-- Each room is isolated — only users in the same room share a canvas
-- **Share Room**: One-click share button (🔗) copies the room URL to clipboard
+### 👥 Multiplayer Real-Time Sync
+- Instant shape broadcasting powered by non-blocking **WebSockets**.
+- **Room Isolation**: Canvas states are strictly isolated per room slug/ID.
+- **Persistent Storage**: Shapes are saved directly to PostgreSQL for session restoration.
+- **One-Click Share**: Copy direct room access link (`/canvas/<roomId>`) to clipboard.
 
-### ↩️ History
-- **Undo**: Reverse your last drawn shape
-- **Redo**: Re-apply a reversed action
+### ↩️ History Management
+- **Undo / Redo**: Multi-level state history tracking for shape additions and deletions.
 
-### 📤 Export (Premium)
-- Export the current canvas as **PNG**, **SVG**, or **JSON**
-- Premium paywall interface included
+### 📤 Multi-Format Export
+- Export drawing canvas in **PNG**, **SVG**, or raw shape **JSON** formats.
 
-### 🖥️ Redesigned User Interface & Landing Hubs
-- **Lobby Landing Page (Port 3000)**: Completely redesigned with a premium dark-mode aesthetic, glowing background shaders, and floating animated hand-drawn SVGs. Single-action Room ID entering directly redirects to the main drawing canvas. Includes a dynamic, collapsible monorepo architecture info box.
-- **Frontend App Features Grid (Port 3003)**: Features a beautiful 3-column flagship grid displaying six major project features (Infinite Canvas, Real-Time Collaboration, One-Click Sharing, Freehand Drawing, Export Options, and Blazing Fast performance) with customized Lucide icons.
-- **Clean Layout**: Cleaned up the landing footer layout by removing unused placeholder links (Terms, Privacy, Blog, Changelog, Twitter) to focus on the project's single source of truth.
+### 🖥️ Modern Dark UI & Micro-Interactions
+- **Landing & Lobby Page**: Sleek dark aesthetic with dynamic glassmorphism, animated feature grids, room creation, and user auth (Signup/Signin).
+- **Responsive Control Bars**: Floating toolbars, active tool highlights, stroke thickness pickers, and color selectors.
 
 ---
 
-## 🛠️ Technology Stack
-
-| Component | Technology | Description |
-| :--- | :--- | :--- |
-| **Monorepo** | [Turborepo](https://turbo.build/) | Orchestrates builds, caching, and package dependencies |
-| **Frontend** | [Next.js 15+](https://nextjs.org/) | `sketcher-frontend`, `web`, `docs` apps |
-| **HTTP API** | [Express](https://expressjs.com/) | Room creation, auth (signup/signin), REST endpoints |
-| **Real-Time** | [ws](https://github.com/websockets/ws) | WebSocket server for live collaborative updates |
-| **Auth** | [JWT](https://jwt.io/) | JSON Web Token based authentication |
-| **ORM** | [Prisma](https://www.prisma.io/) | Type-safe database client and schema migrations |
-| **Database** | PostgreSQL | Neon Cloud (default) or local Docker |
-| **Containers** | Docker + Compose | Full stack containerization |
-
----
-
-## 📁 Repository Structure
+## 🛠️ Monorepo Architecture & Tech Stack
 
 ```
-sketcher-app/
+sketcher/
 ├── apps/
-│   ├── sketcher-frontend/   # Main drawing canvas app       → Port 3003
-│   ├── web/                 # Landing page & room lobby     → Port 3000
-│   ├── docs/                # Developer documentation       → Port 3001
-│   ├── http-backend/        # REST API (rooms, auth)        → Port 3002
-│   └── ws-backend/          # WebSocket gateway server      → Port 8080
+│   ├── web/                 # Next.js 16 Web App (Landing, Auth, Lobby & Canvas) → Port 3000
+│   ├── http-backend/        # Express REST API (Auth, Rooms, Shape History)      → Port 3002
+│   ├── ws-backend/          # WebSocket Gateway (Live Drawing Broadcast)         → Port 8080
+│   └── docs/                # Developer Documentation App                         → Port 3001
 ├── packages/
-│   ├── db/                  # Prisma schema + shared DB client
-│   ├── ui/                  # Shared UI components
-│   ├── typescript-config/   # Shared tsconfig settings
-│   └── eslint-config/       # Shared lint rules
-├── docker-compose.yml       # Full stack Docker orchestration
-└── turbo.json               # Turborepo pipeline config
+│   ├── db/                  # Prisma ORM client & PostgreSQL database schema
+│   ├── common/              # Shared Zod validation schemas & TypeScript types
+│   ├── backend-common/      # Shared backend utilities & JWT configuration
+│   ├── ui/                  # Shared React UI component library
+│   ├── typescript-config/   # Shared tsconfig base files
+│   └── eslint-config/       # Shared ESLint linting rules
+├── docker-compose.yml       # Monorepo Docker orchestration (Dev)
+├── docker-compose.prod.yml  # Monorepo Docker orchestration (Prod)
+└── turbo.json               # Turborepo task pipeline configuration
 ```
+
+### Stack Summary
+
+| Layer | Technology | Role |
+| :--- | :--- | :--- |
+| **Monorepo** | [Turborepo](https://turbo.build/) + [pnpm Workspaces](https://pnpm.io/) | Fast builds, task caching, and shared dependency management |
+| **Frontend** | [Next.js 16](https://nextjs.org/), [React 19](https://react.dev/), [Tailwind CSS v4](https://tailwindcss.com/) | Web application interface & HTML5 Canvas rendering engine |
+| **HTTP API** | [Express.js](https://expressjs.com/), [bcrypt](https://github.com/kelektiv/node.bcrypt.js), [JWT](https://jwt.io/) | User authentication (signup/signin) & REST API endpoints |
+| **Real-Time WS** | [ws](https://github.com/websockets/ws) | Low-latency WebSocket room connection and event dispatching |
+| **Validation** | [Zod](https://zod.dev/) | End-to-end schema validation shared across frontend & backends |
+| **ORM & DB** | [Prisma](https://www.prisma.io/) + [PostgreSQL](https://www.postgresql.org/) | Type-safe queries, migration management, and cloud database persistence |
+| **Containers** | Docker & Docker Compose | Containerized dev/prod deployment environments |
 
 ---
 
 ## 🚀 Getting Started (Local Development)
 
 ### Prerequisites
-- [Node.js](https://nodejs.org/) v18+
-- [pnpm](https://pnpm.io/) v10+
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) *(only if using local PostgreSQL)*
+- **Node.js**: `v18.0.0` or higher
+- **pnpm**: `v10.0.0` or higher (`npm i -g pnpm`)
+- **Docker Desktop** *(Optional - for running local Postgres)*
+
+---
 
 ### 1. Clone the Repository
 ```bash
@@ -100,148 +109,170 @@ git clone https://github.com/sarthakt28/sketcher-app.git
 cd sketcher-app
 ```
 
-### 2. Install Dependencies
+---
+
+### 2. Install Workspace Dependencies
 ```bash
 pnpm install
 ```
 
+---
+
 ### 3. Configure Environment Variables
 
-Create `.env` files with `DATABASE_URL` in these locations:
-- `/` (root)
-- `/packages/db/`
-- `/apps/http-backend/`
-- `/apps/ws-backend/`
+Create `.env` files with your `DATABASE_URL` and `JWT_SECRET` as required:
 
-**Option A — Neon Cloud Postgres (recommended, no Docker needed):**
-```env
-DATABASE_URL="postgresql://neondb_owner:<password>@<host>.neon.tech/neondb?sslmode=require"
-```
+#### Root & Package `.env` setup:
+Create `.env` files in the following folders:
+- `./.env`
+- `./packages/db/.env`
+- `./apps/http-backend/.env`
+- `./apps/ws-backend/.env`
 
-**Option B — Local Docker Postgres:**
+#### Sample `.env` content:
 ```env
 DATABASE_URL="postgresql://sketcher:sketcher_password@localhost:5433/sketcherdb"
+JWT_SECRET="my_super_secret_jwt_key_123"
+PORT=3002
 ```
-Then start the database container:
+
+> **Note (Neon Cloud Postgres):** You can also use hosted Neon PostgreSQL:
+> `DATABASE_URL="postgresql://neondb_owner:<password>@<host>.neon.tech/neondb?sslmode=require"`
+
+---
+
+### 4. Database Setup & Migration
+
+If using local PostgreSQL with Docker, start the database container:
 ```bash
 docker compose up -d postgres
 ```
 
-### 4. Sync Database Schema
+Generate the Prisma Client and push schema to database:
 ```bash
 cd packages/db
 npx prisma db push
 cd ../..
 ```
 
-### 5. Run Development Servers
+---
+
+### 5. Run Local Development Stack
+
+From the root directory, launch all apps in parallel using Turborepo:
+
 ```bash
 pnpm run dev
 ```
 
-| App | URL |
-| :--- | :--- |
-| 🎨 Sketcher Canvas | http://localhost:3003 |
-| 🌐 Web / Lobby | http://localhost:3000 |
-| 📖 Docs | http://localhost:3001 |
-| ⚙️ HTTP API | http://localhost:3002 |
-| 🔌 WebSocket | ws://localhost:8080 |
+#### Application Endpoints:
+| Service | URL / Port | Description |
+| :--- | :--- | :--- |
+| 🎨 **Sketcher Web & Canvas** | [http://localhost:3000](http://localhost:3000) | Main App (Landing `/`, Canvas `/canvas/[roomId]`, Auth) |
+| 📖 **Docs Workspace** | [http://localhost:3001](http://localhost:3001) | Developer documentation site |
+| ⚙️ **HTTP Express Backend** | [http://localhost:3002](http://localhost:3002) | REST endpoints (`/signup`, `/signin`, `/room`, `/chats`) |
+| 🔌 **WebSocket Server** | `ws://localhost:8080` | Multiplayer drawing WebSocket gateway |
 
 ---
 
-## 🏭 Production Build
+## 📡 API Reference
 
-Build all apps:
-```bash
-pnpm run build
-```
+### HTTP REST Endpoints (`apps/http-backend`)
 
-Start production servers:
-```bash
-pnpm run start
+| Method | Endpoint | Auth | Description |
+| :--- | :--- | :---: | :--- |
+| `GET` | `/` | ❌ | Health check endpoint |
+| `POST` | `/signup` | ❌ | Register new account (`{ username, password, name }`) |
+| `POST` | `/signin` | ❌ | Authenticate & obtain JWT token (`{ username, password }`) |
+| `POST` | `/room` | ✅ | Create a new room (`{ name }`) |
+| `GET` | `/room/:slug` | ❌ | Fetch room details by slug (Auto-creates if missing) |
+| `GET` | `/chats/:roomId` | ❌ | Fetch stored shapes/chat history for a room |
+
+### WebSocket Event Protocol (`apps/ws-backend`)
+
+| Event Name | Direction | Payload Example / Description |
+| :--- | :---: | :--- |
+| `join` | Client → Server | `{ type: "join", roomId: 1 }` — Joins WebSocket client to room broadcast pool |
+| `draw` | Client → Server | `{ type: "draw", roomId: 1, message: JSON.stringify(shape) }` — Broadcasts shape & persists to DB |
+| `delete_shape` | Client → Server | Broadcasts shape removal (undo action) to room participants |
+| `clear` | Client → Server | Broadcasts canvas clear event to room participants |
+| `draw` | Server → Client | Relays newly drawn shape to all other users connected to the room |
+
+---
+
+## 🗂️ Database Schema (`packages/db/prisma/schema.prisma`)
+
+```prisma
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  name      String
+  password  String
+  photo     String?
+  rooms     Room[]
+  chats     Chat[]
+  createdAt DateTime @default(now())
+}
+
+model Room {
+  id        Int      @id @default(autoincrement())
+  slug      String   @unique
+  adminId   Int
+  admin     User     @relation(fields: [adminId], references: [id])
+  chats     Chat[]
+  createdAt DateTime @default(now())
+}
+
+model Chat {
+  id        Int      @id @default(autoincrement())
+  message   String
+  roomId    Int
+  userId    Int
+  room      Room     @relation(fields: [roomId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+}
 ```
 
 ---
 
 ## 🐳 Docker Deployment
 
-Run the entire stack (frontend + backends + database) in containers:
-
+### Local Docker Compose (Development Environment)
+Build and spin up the complete containerized stack:
 ```bash
 docker compose up --build
 ```
 
-Open **http://localhost:3003** to start sketching!
-
-To run only the database container (and run apps natively):
+### Production Docker Compose
+Run with production-optimized configuration:
 ```bash
-docker compose up -d postgres
+docker compose -f docker-compose.prod.yml up --build -d
 ```
 
 ---
 
-## ☁️ Render.com Deployment (Production)
+## ☁️ Cloud Deployment (Render.com)
 
-This project is optimized for deployment on **Render.com** using Docker runtimes for robust monorepo path resolution.
+The monorepo is structured for individual service deployment on **Render.com** using standalone Docker containers:
 
-### 1. HTTP Backend (`apps/http-backend`)
-- **Service Type**: Web Service
-- **Runtime**: `Docker`
-- **Docker Path**: `apps/http-backend/Dockerfile`
-- **Environment Variables**:
-  - `DATABASE_URL`: Neon PostgreSQL connection string
-  - `JWT_SECRET`: A secure signing key matching the WS backend
+1. **HTTP Backend Service**
+   - **Type**: Web Service (Docker)
+   - **Dockerfile**: `apps/http-backend/Dockerfile`
+   - **Env Vars**: `DATABASE_URL`, `JWT_SECRET`, `PORT`
 
-### 2. WebSocket Backend (`apps/ws-backend`)
-- **Service Type**: Web Service
-- **Runtime**: `Docker`
-- **Docker Path**: `apps/ws-backend/Dockerfile`
-- **Environment Variables**:
-  - `DATABASE_URL`: Neon PostgreSQL connection string
-  - `JWT_SECRET`: The same secure signing key set in the HTTP backend
+2. **WebSocket Backend Service**
+   - **Type**: Web Service (Docker)
+   - **Dockerfile**: `apps/ws-backend/Dockerfile`
+   - **Env Vars**: `DATABASE_URL`, `JWT_SECRET`, `PORT`
 
-*Note: The WebSocket backend server is equipped with a root HTTP GET listener on `/` and `/health` to satisfy Render's load balancer checks natively.*
-
-### 3. Drawing Canvas Frontend (`apps/sketcher-frontend`)
-- **Service Type**: Web Service
-- **Runtime**: `Docker`
-- **Docker Path**: `apps/sketcher-frontend/Dockerfile`
-- **Environment Variables & Docker Build Arguments**:
-  - `NEXT_PUBLIC_HTTP_BACKEND`: The public HTTP Backend URL (e.g. `https://your-http-backend.onrender.com`)
-  - `NEXT_PUBLIC_WS_URL`: The public WebSocket Backend URL (e.g. `https://your-ws-backend.onrender.com`)
+3. **Next.js Web Service**
+   - **Type**: Web Service (Docker)
+   - **Dockerfile**: `apps/web/Dockerfile`
+   - **Build Args / Env**: `NEXT_PUBLIC_HTTP_BACKEND`, `NEXT_PUBLIC_WS_URL`
 
 ---
 
-## 📡 API Overview
+## 📄 License
 
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `POST` | `/signup` | Register a new user account |
-| `POST` | `/signin` | Authenticate and receive a JWT token |
-| `POST` | `/room` | Create a new collaborative room |
-| `GET` | `/room/:slug` | Fetch room details by slug |
-| `GET` | `/chats/:roomId` | Fetch all persisted shapes for a room |
-
----
-
-## 🔌 WebSocket Events
-
-| Event | Direction | Description |
-| :--- | :--- | :--- |
-| `join` | Client → Server | Join a room by roomId |
-| `draw` | Client → Server | Broadcast a new shape to all room members |
-| `delete_shape` | Client → Server | Broadcast a shape deletion (undo) |
-| `clear` | Client → Server | Clear all shapes in the room |
-| `draw` | Server → Client | Receive a new shape from another user |
-
----
-
-## 🗂️ Database Schema
-
-```prisma
-model User  { id, email, password, name, rooms[] }
-model Room  { id, slug, adminId, createdAt, messages[] }
-model Chat  { id, roomId, userId, message, createdAt }
-```
-
-
+Distributed under the MIT License. See `LICENSE` for details.

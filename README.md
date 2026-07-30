@@ -175,6 +175,56 @@ pnpm run dev
 
 ---
 
+## ⚡ Vercel Deployment Guide (Frontend App)
+
+The Next.js Web application (`apps/web`) is configured for seamless deployment on **Vercel**:
+
+### 1. Import Repository on Vercel
+- Go to [Vercel Dashboard](https://vercel.com/dashboard) → **Add New** → **Project**.
+- Select the `sketcher-app` repository.
+
+### 2. Configure Vercel Project Settings
+- **Root Directory**: Set to `apps/web` *(Critical for Turborepo)*.
+- **Include source files outside of the Root Directory**: Enable (Check ✅).
+- **Framework Preset**: Next.js.
+- **Build Command**: Automatically handled by [`apps/web/vercel.json`](./apps/web/vercel.json):
+  ```bash
+  cd ../.. && npx turbo run build --filter=web
+  ```
+
+### 3. Add Environment Variables on Vercel
+In Vercel **Project Settings → Environment Variables**:
+```env
+NEXT_PUBLIC_HTTP_BACKEND=https://your-http-backend.onrender.com
+NEXT_PUBLIC_WS_URL=wss://your-ws-backend.onrender.com
+```
+
+---
+
+## ☁️ Render.com Deployment (Backends)
+
+The HTTP and WebSocket backends are optimized for deployment on **Render.com** using Docker runtimes:
+
+1. **HTTP Backend Service (`apps/http-backend`)**
+   - **Type**: Web Service
+   - **Runtime**: `Docker`
+   - **Dockerfile Path**: `apps/http-backend/Dockerfile`
+   - **Environment Variables**:
+     - `DATABASE_URL`: Neon PostgreSQL connection URL
+     - `JWT_SECRET`: Secure signing key
+     - `PORT`: `3002`
+
+2. **WebSocket Backend Service (`apps/ws-backend`)**
+   - **Type**: Web Service
+   - **Runtime**: `Docker`
+   - **Dockerfile Path**: `apps/ws-backend/Dockerfile`
+   - **Environment Variables**:
+     - `DATABASE_URL`: Neon PostgreSQL connection URL
+     - `JWT_SECRET`: Matching signing key from HTTP backend
+     - `PORT`: `8080`
+
+---
+
 ## 📡 API Reference
 
 ### HTTP REST Endpoints (`apps/http-backend`)
@@ -249,27 +299,6 @@ Run with production-optimized configuration:
 ```bash
 docker compose -f docker-compose.prod.yml up --build -d
 ```
-
----
-
-## ☁️ Cloud Deployment (Render.com)
-
-The monorepo is structured for individual service deployment on **Render.com** using standalone Docker containers:
-
-1. **HTTP Backend Service**
-   - **Type**: Web Service (Docker)
-   - **Dockerfile**: `apps/http-backend/Dockerfile`
-   - **Env Vars**: `DATABASE_URL`, `JWT_SECRET`, `PORT`
-
-2. **WebSocket Backend Service**
-   - **Type**: Web Service (Docker)
-   - **Dockerfile**: `apps/ws-backend/Dockerfile`
-   - **Env Vars**: `DATABASE_URL`, `JWT_SECRET`, `PORT`
-
-3. **Next.js Web Service**
-   - **Type**: Web Service (Docker)
-   - **Dockerfile**: `apps/web/Dockerfile`
-   - **Build Args / Env**: `NEXT_PUBLIC_HTTP_BACKEND`, `NEXT_PUBLIC_WS_URL`
 
 ---
 

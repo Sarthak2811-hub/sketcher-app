@@ -167,10 +167,12 @@ export function Canvas({ roomId, socket }: { roomId: string; socket: WebSocket }
         resetView: () => void;
         zoomIn: () => void;
         zoomOut: () => void;
+        updateSelectedShapeColor: (color: string) => void;
+        updateSelectedShapeSize: (size: number) => void;
     } | null>(null);
 
     useEffect(() => {
-        let drawInstance: { cleanup: () => void; undo: () => void; redo: () => void; clear: () => void; getShapes: () => any[]; resetView: () => void; zoomIn: () => void; zoomOut: () => void } | undefined;
+        let drawInstance: { cleanup: () => void; undo: () => void; redo: () => void; clear: () => void; getShapes: () => any[]; resetView: () => void; zoomIn: () => void; zoomOut: () => void; updateSelectedShapeColor: (c: string) => void; updateSelectedShapeSize: (s: number) => void } | undefined;
 
         if (canvasRef.current) {
             canvasRef.current.width = window.innerWidth;
@@ -197,7 +199,9 @@ export function Canvas({ roomId, socket }: { roomId: string; socket: WebSocket }
                     getShapes: res.getShapes,
                     resetView: res.resetView,
                     zoomIn: res.zoomIn,
-                    zoomOut: res.zoomOut
+                    zoomOut: res.zoomOut,
+                    updateSelectedShapeColor: (c: string) => res.updateSelectedShapeColor?.(c),
+                    updateSelectedShapeSize: (s: number) => res.updateSelectedShapeSize?.(s)
                 };
             }
         }
@@ -252,36 +256,39 @@ export function Canvas({ roomId, socket }: { roomId: string; socket: WebSocket }
     return (
         <div className="relative h-screen w-screen overflow-hidden bg-[#09090b]">
             {/* Elegant Floating Toolbar */}
-            <div className="absolute top-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-1.5 p-1.5 rounded-2xl bg-black/60 backdrop-blur-xl border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.5)]">
-                {tools.map((tool) => {
-                    const Icon = tool.icon;
-                    const isActive = activeTool === tool.id;
-                    return (
-                        <button
-                            key={tool.id}
-                            onClick={() => setActiveTool(tool.id)}
-                            title={tool.label}
-                            className={`
-                                flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-200 ease-out cursor-pointer
-                                ${isActive
-                                    ? "bg-indigo-600 text-white shadow-[0_0_12px_rgba(99,102,241,0.4)] scale-105"
-                                    : "text-white/50 hover:text-white hover:bg-white/5 hover:scale-105 active:scale-95"
-                                }
-                            `}
-                        >
-                            <Icon size={18} strokeWidth={2.2} />
-                        </button>
-                    );
-                })}
+            <div className="absolute top-3 sm:top-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-1 sm:gap-1.5 p-1 sm:p-1.5 rounded-2xl bg-black/75 sm:bg-black/60 backdrop-blur-xl border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.5)] max-w-[95vw]">
+                {/* Scrollable Tool Icons */}
+                <div className="flex items-center gap-1 sm:gap-1.5 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                    {tools.map((tool) => {
+                        const Icon = tool.icon;
+                        const isActive = activeTool === tool.id;
+                        return (
+                            <button
+                                key={tool.id}
+                                onClick={() => setActiveTool(tool.id)}
+                                title={tool.label}
+                                className={`
+                                    flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 shrink-0 rounded-xl transition-all duration-200 ease-out cursor-pointer
+                                    ${isActive
+                                        ? "bg-indigo-600 text-white shadow-[0_0_12px_rgba(99,102,241,0.4)] scale-105"
+                                        : "text-white/50 hover:text-white hover:bg-white/5 hover:scale-105 active:scale-95"
+                                    }
+                                `}
+                            >
+                                <Icon size={18} strokeWidth={2.2} />
+                            </button>
+                        );
+                    })}
+                </div>
 
                 {/* Vertical Divider */}
-                <div className="w-[1px] h-6 bg-white/10 mx-1" />
+                <div className="w-[1px] h-6 bg-white/10 mx-0.5 sm:mx-1 shrink-0" />
 
                 {/* Color Selector Dropdown */}
-                <div className="relative">
+                <div className="relative shrink-0">
                     <button
                         onClick={toggleColor}
-                        className="flex items-center gap-2.5 px-3 py-2 h-10 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 active:scale-95 transition-all duration-200 text-white cursor-pointer select-none"
+                        className="flex items-center gap-1.5 sm:gap-2.5 px-2.5 sm:px-3 py-2 h-9 sm:h-10 shrink-0 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 active:scale-95 transition-all duration-200 text-white cursor-pointer select-none"
                     >
                         {activeColor ? (
                             <>
@@ -289,14 +296,14 @@ export function Canvas({ roomId, socket }: { roomId: string; socket: WebSocket }
                                     style={{ backgroundColor: activeColor }}
                                     className="w-3 h-3 rounded-full border border-white/25"
                                 />
-                                <span className="text-[10px] font-bold tracking-wider uppercase select-none">
+                                <span className="text-[10px] font-bold tracking-wider uppercase select-none hidden sm:inline">
                                     {colors.find(c => c.value === activeColor)?.label || "White"}
                                 </span>
                             </>
                         ) : (
                             <>
                                 <div className="w-3 h-3 rounded-full border border-dashed border-white/40 bg-transparent" />
-                                <span className="text-[10px] font-bold tracking-wider uppercase text-white/50 select-none">
+                                <span className="text-[10px] font-bold tracking-wider uppercase text-white/50 select-none hidden sm:inline">
                                     Color
                                 </span>
                             </>
@@ -313,6 +320,7 @@ export function Canvas({ roomId, socket }: { roomId: string; socket: WebSocket }
                                     onClick={() => {
                                         setActiveColor(color.value);
                                         setColorOpen(false);
+                                        drawActionsRef.current?.updateSelectedShapeColor?.(color.value);
                                     }}
                                     className={`
                                         flex items-center gap-2.5 px-3 py-2 rounded-lg text-left text-xs font-semibold cursor-pointer transition-all duration-150 hover:bg-white/5 select-none
@@ -331,10 +339,10 @@ export function Canvas({ roomId, socket }: { roomId: string; socket: WebSocket }
                 </div>
 
                 {/* Size Selector Dropdown */}
-                <div className="relative">
+                <div className="relative shrink-0">
                     <button
                         onClick={toggleSize}
-                        className="flex items-center gap-2.5 px-3 py-2 h-10 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 active:scale-95 transition-all duration-200 text-white cursor-pointer select-none"
+                        className="flex items-center gap-1.5 sm:gap-2.5 px-2.5 sm:px-3 py-2 h-9 sm:h-10 shrink-0 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 active:scale-95 transition-all duration-200 text-white cursor-pointer select-none"
                     >
                         {activeSize ? (
                             <>
@@ -342,7 +350,7 @@ export function Canvas({ roomId, socket }: { roomId: string; socket: WebSocket }
                                         activeSize === 6 ? "w-1.5 h-1.5" :
                                             activeSize === 12 ? "w-2.5 h-2.5" : "w-3.5 h-3.5"
                                     }`} />
-                                <span className="text-[10px] font-bold tracking-wider uppercase select-none">
+                                <span className="text-[10px] font-bold tracking-wider uppercase select-none hidden sm:inline">
                                     {activeSize === 2 ? "Thin" :
                                         activeSize === 6 ? "Medium" :
                                             activeSize === 12 ? "Thick" : "Extra Thick"}
@@ -351,7 +359,7 @@ export function Canvas({ roomId, socket }: { roomId: string; socket: WebSocket }
                         ) : (
                             <>
                                 <div className="w-1.5 h-1.5 rounded-full border border-dashed border-white/40 bg-transparent" />
-                                <span className="text-[10px] font-bold tracking-wider uppercase text-white/50 select-none">
+                                <span className="text-[10px] font-bold tracking-wider uppercase text-white/50 select-none hidden sm:inline">
                                     Size
                                 </span>
                             </>
@@ -373,6 +381,7 @@ export function Canvas({ roomId, socket }: { roomId: string; socket: WebSocket }
                                     onClick={() => {
                                         setActiveSize(sz.val);
                                         setSizeOpen(false);
+                                        drawActionsRef.current?.updateSelectedShapeSize?.(sz.val);
                                     }}
                                     className={`
                                         flex items-center gap-2.5 px-3 py-2 rounded-lg text-left text-xs font-semibold cursor-pointer transition-all duration-150 hover:bg-white/5 select-none
@@ -389,13 +398,13 @@ export function Canvas({ roomId, socket }: { roomId: string; socket: WebSocket }
                 </div>
 
                 {/* Vertical Divider */}
-                <div className="w-[1px] h-6 bg-white/10 mx-1" />
+                <div className="w-[1px] h-6 bg-white/10 mx-0.5 sm:mx-1 shrink-0" />
 
                 {/* Undo Button */}
                 <button
                     onClick={() => drawActionsRef.current?.undo()}
                     title="Undo"
-                    className="flex items-center justify-center w-10 h-10 rounded-xl text-white/50 hover:text-white hover:bg-white/5 hover:scale-105 active:scale-95 transition-all duration-200 ease-out cursor-pointer"
+                    className="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 shrink-0 rounded-xl text-white/50 hover:text-white hover:bg-white/5 hover:scale-105 active:scale-95 transition-all duration-200 ease-out cursor-pointer"
                 >
                     <Undo2 size={18} strokeWidth={2.2} />
                 </button>
@@ -404,21 +413,21 @@ export function Canvas({ roomId, socket }: { roomId: string; socket: WebSocket }
                 <button
                     onClick={() => drawActionsRef.current?.redo()}
                     title="Redo"
-                    className="flex items-center justify-center w-10 h-10 rounded-xl text-white/50 hover:text-white hover:bg-white/5 hover:scale-105 active:scale-95 transition-all duration-200 ease-out cursor-pointer"
+                    className="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 shrink-0 rounded-xl text-white/50 hover:text-white hover:bg-white/5 hover:scale-105 active:scale-95 transition-all duration-200 ease-out cursor-pointer"
                 >
                     <Redo2 size={18} strokeWidth={2.2} />
                 </button>
 
                 {/* Vertical Divider */}
-                <div className="w-[1px] h-6 bg-white/10 mx-1" />
+                <div className="w-[1px] h-6 bg-white/10 mx-0.5 sm:mx-1 shrink-0" />
 
                 {/* Export / Download Dropdown */}
-                <div className="relative">
+                <div className="relative shrink-0">
                     <button
                         onClick={toggleExport}
                         title="Export Diagram"
                         className={`
-                            flex items-center justify-center w-10 h-10 rounded-xl cursor-pointer transition-all duration-200 ease-out hover:scale-105 active:scale-95
+                            flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 shrink-0 rounded-xl cursor-pointer transition-all duration-200 ease-out hover:scale-105 active:scale-95
                             ${exportOpen ? "bg-indigo-600 text-white shadow-[0_0_12px_rgba(99,102,241,0.4)] scale-105" : "text-white/50 hover:text-white hover:bg-white/5"}
                         `}
                     >
@@ -461,7 +470,7 @@ export function Canvas({ roomId, socket }: { roomId: string; socket: WebSocket }
                 </div>
 
                 {/* Vertical Divider */}
-                <div className="w-[1px] h-6 bg-white/10 mx-1" />
+                <div className="w-[1px] h-6 bg-white/10 mx-0.5 sm:mx-1 shrink-0" />
 
                 {/* Clear Canvas Button */}
                 <button
@@ -471,20 +480,20 @@ export function Canvas({ roomId, socket }: { roomId: string; socket: WebSocket }
                         }
                     }}
                     title="Clear Canvas"
-                    className="flex items-center justify-center w-10 h-10 rounded-xl text-white/50 hover:text-red-400 hover:bg-red-500/10 hover:scale-105 active:scale-95 transition-all duration-200 ease-out cursor-pointer"
+                    className="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 shrink-0 rounded-xl text-white/50 hover:text-red-400 hover:bg-red-500/10 hover:scale-105 active:scale-95 transition-all duration-200 ease-out cursor-pointer"
                 >
                     <Trash2 size={18} strokeWidth={2.2} />
                 </button>
 
                 {/* Vertical Divider */}
-                <div className="w-[1px] h-6 bg-white/10 mx-1" />
+                <div className="w-[1px] h-6 bg-white/10 mx-0.5 sm:mx-1 shrink-0" />
 
                 {/* Share Room Button */}
                 <button
                     onClick={handleShare}
                     title="Copy Room Link"
                     className={`
-                        flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-200 ease-out cursor-pointer hover:scale-105 active:scale-95
+                        flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 shrink-0 rounded-xl transition-all duration-200 ease-out cursor-pointer hover:scale-105 active:scale-95
                         ${copied
                             ? "text-emerald-400 bg-emerald-500/10 shadow-[0_0_10px_rgba(52,211,153,0.25)]"
                             : "text-white/50 hover:text-white hover:bg-white/5"
@@ -532,7 +541,7 @@ export function Canvas({ roomId, socket }: { roomId: string; socket: WebSocket }
 
             {/* Properties Selection Modal Popup */}
             {showModal && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 backdrop-blur-md animate-fade-in">
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 backdrop-blur-md animate-fade-in p-4">
                     <style>{`
                         @keyframes fadeIn {
                             from { opacity: 0; }
@@ -635,7 +644,7 @@ export function Canvas({ roomId, socket }: { roomId: string; socket: WebSocket }
 
             {/* Premium Upgrade paywall Modal Popup */}
             {showPremiumModal && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 backdrop-blur-md animate-fade-in">
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 backdrop-blur-md animate-fade-in p-4">
                     <div className="w-full max-w-md p-8 rounded-3xl bg-zinc-900/90 border border-white/10 shadow-[0_16px_48px_rgba(0,0,0,0.8)] animate-scale-up text-white flex flex-col gap-6 text-center">
                         <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-yellow-400 to-amber-600 flex items-center justify-center mx-auto mb-2 shadow-lg shadow-yellow-500/10">
                             <Sparkles className="w-7 h-7 text-white animate-bounce" />
@@ -676,7 +685,7 @@ export function Canvas({ roomId, socket }: { roomId: string; socket: WebSocket }
             )}
 
             {/* Zoom Controls */}
-            <div className="absolute bottom-6 left-6 z-50 flex items-center gap-2 p-1.5 rounded-2xl bg-black/60 backdrop-blur-xl border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.5)]">
+            <div className="absolute bottom-3 left-3 sm:bottom-6 sm:left-6 z-50 flex items-center gap-1.5 sm:gap-2 p-1 sm:p-1.5 rounded-2xl bg-black/75 sm:bg-black/60 backdrop-blur-xl border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.5)]">
                 <button
                     onClick={() => drawActionsRef.current?.zoomOut()}
                     title="Zoom Out"
@@ -684,7 +693,7 @@ export function Canvas({ roomId, socket }: { roomId: string; socket: WebSocket }
                 >
                     <Minus size={16} strokeWidth={2.2} />
                 </button>
-                <span className="text-[10px] font-bold tracking-wider text-white/70 min-w-[40px] text-center select-none uppercase">
+                <span className="text-[10px] font-bold tracking-wider text-white/70 min-w-[36px] sm:min-w-[40px] text-center select-none uppercase">
                     {Math.round(zoom * 100)}%
                 </span>
                 <button
@@ -704,7 +713,7 @@ export function Canvas({ roomId, socket }: { roomId: string; socket: WebSocket }
                 </button>
             </div>
 
-            <canvas ref={canvasRef} className="block w-full h-full" />
+            <canvas ref={canvasRef} className="block w-full h-full touch-none" style={{ touchAction: "none" }} />
         </div>
     );
 }

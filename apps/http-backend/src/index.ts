@@ -145,7 +145,7 @@ app.get("/chats/:roomId", async (req, res) => {
                 where: { slug: roomIdParam }
             });
             if (!room) {
-                res.status(404).json({ message: "Room not found" });
+                res.status(404).json({ message: "Room not found", messages: [] });
                 return;
             }
             roomId = room.id;
@@ -154,7 +154,16 @@ app.get("/chats/:roomId", async (req, res) => {
         const messages = await prismaClient.chat.findMany({
             where: { roomId },
             orderBy: { id: "asc" },  // asc = oldest first, so canvas draws in correct order
-            take: 1000
+            take: 1000,
+            include: {
+                user: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true
+                    }
+                }
+            }
         });
 
         res.json({ messages });
@@ -172,27 +181,44 @@ app.get("/room/:slug", async (req, res) => {
         if (!room) {
             let firstUser = await prismaClient.user.findFirst();
             if (!firstUser) {
-                console.log("[HTTP] No users found in database. Seeding default dev-user account...");
-                const hashedPassword = await bcrypt.hash("password123", 10);
-                firstUser = await prismaClient.user.create({
-                    data: {
-                        email: "dev-user@example.com",
-                        password: hashedPassword,
-                        name: "Dev User",
-                        photo: ""
+                firstUser = await prismaClient.user.findFirst({ where: { email: "dev-user@example.com" } });
+                if (!firstUser) {
+                    try {
+                        const hashedPassword = await bcrypt.hash("password123", 10);
+                        firstUser = await prismaClient.user.create({
+                            data: {
+                                email: "dev-user@example.com",
+                                password: hashedPassword,
+                                name: "Dev User",
+                                photo: ""
+                            }
+                        });
+                    } catch (userErr) {
+                        firstUser = await prismaClient.user.findFirst();
                     }
-                });
+                }
             }
-            room = await prismaClient.room.create({
-                data: { slug, adminId: firstUser.id }
-            });
-            console.log(`[HTTP] Auto-created room '${slug}' for user ID ${firstUser.id}`);
+
+            if (firstUser) {
+                try {
+                    room = await prismaClient.room.create({
+                        data: { slug, adminId: firstUser.id }
+                    });
+                    console.log(`[HTTP] Auto-created room '${slug}' for user ID ${firstUser.id}`);
+                } catch (roomErr) {
+                    room = await prismaClient.room.findFirst({ where: { slug } });
+                }
+            }
         }
 
-        res.json({ room })
+        if (room) {
+            res.json({ room });
+        } else {
+            res.status(404).json({ room: null, message: "Room not found" });
+        }
     } catch (e) {
         console.error("[HTTP] Failed to fetch/create room:", e);
-        res.status(500).json({ room: null, message: "Server error" })
+        res.status(500).json({ room: null, message: "Server error" });
     }
 })
 

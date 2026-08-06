@@ -481,6 +481,8 @@ export function initDraw(
             socket.onmessage = (event) => {
                 try {
                     const message = JSON.parse(event.data);
+                    if (message.type === "user_text_message") return;
+
                     if (message.type === "chat") {
                         const parsedShape = JSON.parse(message.message);
                         if (parsedShape && (

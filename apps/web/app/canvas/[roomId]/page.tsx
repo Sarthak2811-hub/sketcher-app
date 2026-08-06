@@ -17,10 +17,9 @@ export default async function CanvasPage({params}:{
             cache: 'no-store'
         });
         if (!response.ok) {
-            console.error(`[Next.js Server] Backend returned status ${response.status} ${response.statusText}`);
+            console.log(`[Next.js Server] Room fetch fallback for slug: ${slug} (${response.status})`);
         } else {
             const data = await response.json();
-            console.log(`[Next.js Server] Received room data:`, data);
             if (data?.room) {
                 roomDbId = String(data.room.id);
             }

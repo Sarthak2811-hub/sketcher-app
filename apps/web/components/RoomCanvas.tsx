@@ -81,6 +81,9 @@ export function RoomCanvas({roomId}:{
         let active = true;
         let pingInterval: any = null;
 
+        let retryCount = 0;
+        let reconnectTimeout: any = null;
+
         async function connect() {
             setError(null);
             let token = localStorage.getItem("token") || "";
@@ -99,11 +102,10 @@ export function RoomCanvas({roomId}:{
 
             if (!active) return;
 
-            console.log("[RoomCanvas] Connecting to WebSocket with token:", token ? (token.substring(0, 15) + "...") : "none");
+            console.log(`[RoomCanvas] Connecting to WebSocket (attempt ${retryCount + 1})...`);
             
             try {
                 const resolvedWsUrl = getWsUrl(WS_URL);
-                console.log("[RoomCanvas] WebSocket URL resolved to:", resolvedWsUrl);
                 const socketInstance = new WebSocket(`${resolvedWsUrl}?token=${token}`);
                 ws = socketInstance;
                 
@@ -112,13 +114,14 @@ export function RoomCanvas({roomId}:{
                         socketInstance.close();
                         return;
                     }
+                    retryCount = 0; // Reset retry counter on successful connection
                     setSocket(socketInstance);
                     socketInstance.send(JSON.stringify({
                         type: "join",
                         roomId
                     }));
 
-                    // Start sending ping heartbeats every 30 seconds to keep connection alive on Render
+                    // Start sending ping heartbeats every 30 seconds to keep connection alive
                     pingInterval = setInterval(() => {
                         if (socketInstance.readyState === WebSocket.OPEN) {
                             socketInstance.send(JSON.stringify({ type: "ping" }));
@@ -127,9 +130,7 @@ export function RoomCanvas({roomId}:{
                 };
                 
                 socketInstance.onerror = () => {
-                    // onerror is always followed by onclose — let onclose handle the error UI
-                    // Logging an empty WebSocket ErrorEvent is misleading, so we skip it here
-                    console.warn("[RoomCanvas] WebSocket connection error (see onclose for details)");
+                    console.warn("[RoomCanvas] WebSocket connection error (handled in onclose)");
                 };
                 
                 socketInstance.onclose = (event) => {
@@ -140,20 +141,40 @@ export function RoomCanvas({roomId}:{
                     }
                     if (!active) return; // StrictMode cleanup — ignore silently
                     
-                    setSocket(null); // Clear socket state to unmount the canvas
+                    setSocket(null); // Clear socket state
                     
                     if (event.code === 4001) {
-                        setError("Your session token was rejected by the server. Your token may have expired or is invalid.");
+                        console.log("[RoomCanvas] Token rejected by server (4001). Clearing token & re-authenticating...");
+                        localStorage.removeItem("token");
+                        if (retryCount < 3) {
+                            retryCount++;
+                            reconnectTimeout = setTimeout(connect, 1000);
+                        } else {
+                            setError("Your session token was rejected by the server. Please click Reset Session & Retry below.");
+                        }
                     } else if (event.code !== 1000 && event.code !== 1001) {
-                        // Only show error for truly abnormal close codes
-                        setError(`Connection to drawing server was closed (Code: ${event.code}). Please verify network or server status.`);
+                        if (retryCount < 3) {
+                            retryCount++;
+                            console.log(`[RoomCanvas] Disconnected (code ${event.code}). Auto-reconnecting in 1.5s (attempt ${retryCount}/3)...`);
+                            // If first retry failed, clear token to ensure clean auth
+                            if (retryCount >= 2) {
+                                localStorage.removeItem("token");
+                            }
+                            reconnectTimeout = setTimeout(connect, 1500);
+                        } else {
+                            setError(`Connection to drawing server was closed (Code: ${event.code}). Please verify network or server status.`);
+                        }
                     }
-                    // Codes 1000/1001 = clean close by StrictMode cleanup — silently no-op
                 };
             } catch (err: any) {
                 console.error("[RoomCanvas] Connection initialization failed:", err);
                 if (active) {
-                    setError(`Failed to initialize WebSocket: ${err.message || String(err)}`);
+                    if (retryCount < 3) {
+                        retryCount++;
+                        reconnectTimeout = setTimeout(connect, 1500);
+                    } else {
+                        setError(`Failed to initialize WebSocket: ${err.message || String(err)}`);
+                    }
                 }
             }
         }
@@ -164,6 +185,9 @@ export function RoomCanvas({roomId}:{
             active = false;
             if (pingInterval) {
                 clearInterval(pingInterval);
+            }
+            if (reconnectTimeout) {
+                clearTimeout(reconnectTimeout);
             }
             if (ws) {
                 ws.close();

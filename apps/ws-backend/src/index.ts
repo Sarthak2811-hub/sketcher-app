@@ -135,6 +135,41 @@ wss.on("connection", function connection(ws, request) {
       }
     }
 
+    if (parsedData.type === "user_text_message") {
+      const roomId = parsedData.roomId;
+      const message = parsedData.message;
+      const senderName = parsedData.senderName || "User";
+
+      // 1. Broadcast text message to ALL users connected to this room
+      users.forEach(user => {
+        if (user.rooms.includes(roomId)) {
+          user.ws.send(JSON.stringify({
+            type: "user_text_message",
+            message,
+            senderName,
+            userId,
+            roomId,
+            timestamp: new Date().toISOString()
+          }));
+        }
+      });
+
+      // 2. Persist text message to database
+      const numericRoomId = parseInt(roomId);
+      const numericUserId = parseInt(userId);
+      if (!isNaN(numericRoomId) && !isNaN(numericUserId)) {
+        prismaClient.chat.create({
+          data: {
+            message,
+            roomId: numericRoomId,
+            userId: numericUserId
+          }
+        }).catch(e => {
+          console.error(`[WS] Failed to save text message to DB:`, e?.message ?? e);
+        });
+      }
+    }
+
     if (parsedData.type === "delete_shape") {
       const roomId = parsedData.roomId;
       const shapeId = parsedData.shapeId;

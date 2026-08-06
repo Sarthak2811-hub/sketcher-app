@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { initDraw, ToolMode } from "../draw/index";
-import { Square, Circle, ArrowUpRight, Triangle as TriangleIcon, Pencil, Undo2, Redo2, Trash2, Type, Eraser, Download, Sparkles, Lock, MousePointer, Hand, Minus, Plus, RotateCcw, Share2, Check } from "lucide-react";
+import { Square, Circle, ArrowUpRight, Triangle as TriangleIcon, Pencil, Undo2, Redo2, Trash2, Type, Eraser, Download, Sparkles, Lock, MousePointer, Hand, Minus, Plus, RotateCcw, Share2, Check, MessageSquare } from "lucide-react";
+import { ChatOverlay } from "./ChatOverlay";
 
 export function Canvas({ roomId, socket }: { roomId: string; socket: WebSocket }) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -21,9 +22,18 @@ export function Canvas({ roomId, socket }: { roomId: string; socket: WebSocket }
     const [colorOpen, setColorOpen] = useState<boolean>(false);
     const [sizeOpen, setSizeOpen] = useState<boolean>(false);
     const [exportOpen, setExportOpen] = useState<boolean>(false);
+    const [chatOpen, setChatOpen] = useState<boolean>(false);
+    const [userEmail, setUserEmail] = useState<string>("Member");
     const [showModal, setShowModal] = useState<boolean>(false);
     const [showPremiumModal, setShowPremiumModal] = useState<boolean>(false);
     const [copied, setCopied] = useState<boolean>(false);
+
+    useEffect(() => {
+        if (typeof window !== "undefined") {
+            const stored = localStorage.getItem("userEmail");
+            if (stored) setUserEmail(stored);
+        }
+    }, []);
 
     const toggleColor = () => {
         setColorOpen(!colorOpen);
@@ -502,6 +512,29 @@ export function Canvas({ roomId, socket }: { roomId: string; socket: WebSocket }
                 >
                     {copied ? <Check size={18} strokeWidth={2.5} /> : <Share2 size={18} strokeWidth={2.2} />}
                 </button>
+
+                {/* Vertical Divider */}
+                <div className="w-[1px] h-6 bg-white/10 mx-0.5 sm:mx-1 shrink-0" />
+
+                {/* Chat Panel Toggle Button */}
+                <button
+                    onClick={() => setChatOpen(!chatOpen)}
+                    title={isPremiumUser() ? "Toggle Live Chat" : "Sign In to Unlock Live Chat"}
+                    className={`
+                        relative flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 shrink-0 rounded-xl transition-all duration-200 ease-out cursor-pointer hover:scale-105 active:scale-95
+                        ${chatOpen
+                            ? "bg-indigo-600 text-white shadow-[0_0_12px_rgba(99,102,241,0.4)] scale-105"
+                            : "text-white/50 hover:text-white hover:bg-white/5"
+                        }
+                    `}
+                >
+                    <MessageSquare size={18} strokeWidth={2.2} />
+                    {!isPremiumUser() && (
+                        <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-yellow-500 text-black flex items-center justify-center text-[9px] font-extrabold border border-black shadow">
+                            🔒
+                        </span>
+                    )}
+                </button>
             </div>
 
             {/* Invisible backdrop overlay to close dropdowns when clicking away */}
@@ -714,6 +747,16 @@ export function Canvas({ roomId, socket }: { roomId: string; socket: WebSocket }
             </div>
 
             <canvas ref={canvasRef} className="block w-full h-full touch-none" style={{ touchAction: "none" }} />
+
+            {/* Right-Side Real-Time Live Chat Overlay Panel */}
+            <ChatOverlay
+                socket={socket}
+                roomId={roomId}
+                userEmail={userEmail}
+                isLoggedIn={isPremiumUser()}
+                isOpen={chatOpen}
+                onToggle={() => setChatOpen(!chatOpen)}
+            />
         </div>
     );
 }

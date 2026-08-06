@@ -10,21 +10,23 @@
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-v16-4169E1?style=flat-square&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![pnpm](https://img.shields.io/badge/pnpm-v10-F69220?style=flat-square&logo=pnpm&logoColor=white)](https://pnpm.io/)
 
-**Sketcher** is a premium, real-time collaborative whiteboard and diagramming application. Draw together with teammates on a fully infinite canvas featuring sub-millisecond smooth zooming and panning, WebSocket synchronization, comprehensive geometric shape tools, undo/redo state history, and single-click room sharing.
+**Sketcher** is a premium, real-time collaborative whiteboard and diagramming application. Draw together with teammates on a fully infinite canvas featuring sub-millisecond smooth zooming and panning, multi-touch gestures, live room chat, WebSocket synchronization, comprehensive geometric shape tools, undo/redo state history, and single-click room sharing.
 
 The codebase is built as a high-performance **Turborepo monorepo** with **Next.js 16**, **Express.js**, **WebSockets (`ws`)**, **Prisma ORM**, and **PostgreSQL**.
 
 ---
 
-## ✨ Features
+## ✨ Key Features
 
-### 🖼️ Infinite Canvas Engine
+### 🖼️ Infinite Canvas Engine & Multi-Touch Support
 - **Pan Navigation**: Drag with the **Hand tool**, hold **Spacebar + Left Click**, or use **Middle Mouse Drag**.
+- **Multi-Touch Gestures**: Seamless 2-finger pinch-to-zoom and 2-finger canvas panning on mobile & tablet touchscreens.
+- **Gesture Mutex & Cancellation**: Intelligent gesture locking prevents accidental "ghost shape" creation when transitioning between single-finger drawing and multi-touch zooming.
 - **Responsive Zoom**: Mouse scroll wheel or bottom-left zoom controls — smooth scaling from `10%` to `2000%` centered at your cursor.
 - **Dynamic Dot Grid**: Hardware-accelerated background dot grid pattern that pans and zooms seamlessly.
 - **One-Click Recenter**: Reset zoom and camera view to original canvas origin `(0, 0)`.
 
-### 🎨 Drawing & Formatting Tools
+### 🎨 Drawing, Selection & Formatting Tools
 | Tool | Symbol | Description |
 | :--- | :---: | :--- |
 | **Pencil** | ✏️ | Freehand smooth stroke drawing |
@@ -33,29 +35,36 @@ The codebase is built as a high-performance **Turborepo monorepo** with **Next.j
 | **Arrow** | → | Directional arrows with calculated head tips |
 | **Triangle** | △ | Geometric triangle outlines |
 | **Text** | T | Dynamic inline canvas text labels |
-| **Eraser** | ◌ | Custom canvas eraser tool |
-| **Select** | ↖ | Select, drag, translate, and resize drawn shapes |
+| **Eraser** | ◌ | Custom canvas shape eraser tool |
+| **Select** | ↖ | Select, drag, translate, and live re-style existing drawn shapes |
 | **Hand** | ✋ | Pan tool to move across the infinite canvas |
 
-### 🌈 Style System
-- **Color Palette (8 Colors)**: White (`#FFFFFF`), Red (`#EF4444`), Orange (`#F97316`), Yellow (`#EAB308`), Green (`#22C55E`), Blue (`#3B82F6`), Purple (`#A855F7`), Pink (`#EC4899`).
+### 🌈 Live Formatting & Style System
+- **Color Palette (8 Curated Colors)**: White (`#FFFFFF`), Red (`#EF4444`), Orange (`#F97316`), Yellow (`#EAB308`), Green (`#22C55E`), Blue (`#3B82F6`), Purple (`#A855F7`), Pink (`#EC4899`).
 - **Stroke Widths (4 Levels)**: Thin (`2px`), Medium (`6px`), Thick (`12px`), Extra Thick (`20px`).
+- **Selected Shape Property Updating**: Changing stroke color or size while a shape is selected live-updates both local canvas and WebSocket peers.
 
-### 👥 Multiplayer Real-Time Sync
-- Instant shape broadcasting powered by non-blocking **WebSockets**.
-- **Room Isolation**: Canvas states are strictly isolated per room slug/ID.
-- **Persistent Storage**: Shapes are saved directly to PostgreSQL for session restoration.
+### 💬 Real-Time Mobile-Responsive Live Room Chat
+- **Right-Side Collapsible Sidebar**: Dark glassmorphism chat panel (`w-[calc(100vw-1rem)] sm:w-96`) docked on the right side of the canvas.
+- **Instant Display Name Prompt**: First-time open prompts room participants (`What is your name? 👋`) with instant setup & edit options.
+- **Tab-Isolated Session Identities (`sessionStorage`)**: Distinct participant names per tab/window, resolving identity collision during local multi-tab testing.
+- **Real-Time Broadcast & DB Storage**: Text messages broadcast instantly via WebSockets (`user_text_message`) and persist to PostgreSQL via Prisma.
+- **Unread Badge Indicator**: Floating animated unread message count badge when the chat panel is collapsed.
+
+### 👥 Multiplayer Real-Time Sync & Auto-Reconnect
+- Non-blocking **WebSockets** for shape and chat message broadcasting.
+- **Self-Healing Auto-Reconnect**: Reconnects automatically (3 retry attempts with 1.5s delay) during temporary network drops or backend reboots.
+- **Room Isolation**: Canvas and chat states are strictly isolated per room slug/ID.
+- **Persistent DB Storage**: Shapes & chat logs are saved directly to PostgreSQL for session restoration.
 - **One-Click Share**: Copy direct room access link (`/canvas/<roomId>`) to clipboard.
 
-### ↩️ History Management
-- **Undo / Redo**: Multi-level state history tracking for shape additions and deletions.
+### ↩️ History & Export Options
+- **Multi-Level Undo / Redo**: Multi-level state history tracking for shape additions and deletions.
+- **Multi-Format Export**: Export canvas drawings as **PNG**, **SVG**, or raw shape **JSON** files.
 
-### 📤 Multi-Format Export
-- Export drawing canvas in **PNG**, **SVG**, or raw shape **JSON** formats.
-
-### 🖥️ Modern Dark UI & Micro-Interactions
+### 🖥️ Modern Responsive Dark UI
+- **Responsive Clipless Floating Toolbar**: Outer flex container with horizontally scrollable tool buttons and un-clipped dropdown menus on mobile.
 - **Landing & Lobby Page**: Sleek dark aesthetic with dynamic glassmorphism, animated feature grids, room creation, and user auth (Signup/Signin).
-- **Responsive Control Bars**: Floating toolbars, active tool highlights, stroke thickness pickers, and color selectors.
 
 ---
 
@@ -64,10 +73,10 @@ The codebase is built as a high-performance **Turborepo monorepo** with **Next.j
 ```
 sketcher/
 ├── apps/
-│   ├── web/                 # Next.js 16 Web App (Landing, Auth, Lobby & Canvas) → Port 3000
-│   ├── http-backend/        # Express REST API (Auth, Rooms, Shape History)      → Port 3002
-│   ├── ws-backend/          # WebSocket Gateway (Live Drawing Broadcast)         → Port 8080
-│   └── docs/                # Developer Documentation App                         → Port 3001
+│   ├── web/                 # Next.js 16 Web App (Landing, Auth, Canvas, Chat)   → Port 3000
+│   ├── http-backend/        # Express REST API (Auth, Rooms, Shape/Chat History) → Port 3002
+│   ├── ws-backend/          # WebSocket Gateway (Live Shape & Chat Broadcast)    → Port 8080
+│   └── docs/                # Developer Documentation App                        → Port 3001
 ├── packages/
 │   ├── db/                  # Prisma ORM client & PostgreSQL database schema
 │   ├── common/              # Shared Zod validation schemas & TypeScript types
@@ -85,9 +94,9 @@ sketcher/
 | Layer | Technology | Role |
 | :--- | :--- | :--- |
 | **Monorepo** | [Turborepo](https://turbo.build/) + [pnpm Workspaces](https://pnpm.io/) | Fast builds, task caching, and shared dependency management |
-| **Frontend** | [Next.js 16](https://nextjs.org/), [React 19](https://react.dev/), [Tailwind CSS v4](https://tailwindcss.com/) | Web application interface & HTML5 Canvas rendering engine |
-| **HTTP API** | [Express.js](https://expressjs.com/), [bcrypt](https://github.com/kelektiv/node.bcrypt.js), [JWT](https://jwt.io/) | User authentication (signup/signin) & REST API endpoints |
-| **Real-Time WS** | [ws](https://github.com/websockets/ws) | Low-latency WebSocket room connection and event dispatching |
+| **Frontend** | [Next.js 16](https://nextjs.org/), [React 19](https://react.dev/), [Tailwind CSS v4](https://tailwindcss.com/) | Web application interface, HTML5 Canvas rendering & live chat UI |
+| **HTTP API** | [Express.js](https://expressjs.com/), [bcrypt](https://github.com/kelektiv/node.bcrypt.js), [JWT](https://jwt.io/) | User authentication (signup/signin), room details & REST history API |
+| **Real-Time WS** | [ws](https://github.com/websockets/ws) | Low-latency WebSocket room gateway for shapes and text messages |
 | **Validation** | [Zod](https://zod.dev/) | End-to-end schema validation shared across frontend & backends |
 | **ORM & DB** | [Prisma](https://www.prisma.io/) + [PostgreSQL](https://www.postgresql.org/) | Type-safe queries, migration management, and cloud database persistence |
 | **Containers** | Docker & Docker Compose | Containerized dev/prod deployment environments |
@@ -171,7 +180,7 @@ pnpm run dev
 | 🎨 **Sketcher Web & Canvas** | [http://localhost:3000](http://localhost:3000) | Main App (Landing `/`, Canvas `/canvas/[roomId]`, Auth) |
 | 📖 **Docs Workspace** | [http://localhost:3001](http://localhost:3001) | Developer documentation site |
 | ⚙️ **HTTP Express Backend** | [http://localhost:3002](http://localhost:3002) | REST endpoints (`/signup`, `/signin`, `/room`, `/chats`) |
-| 🔌 **WebSocket Server** | `ws://localhost:8080` | Multiplayer drawing WebSocket gateway |
+| 🔌 **WebSocket Server** | `ws://localhost:8080` | Multiplayer drawing & chat WebSocket gateway |
 
 ---
 
@@ -242,63 +251,13 @@ The HTTP and WebSocket backends are optimized for deployment on **Render.com** u
 
 | Event Name | Direction | Payload Example / Description |
 | :--- | :---: | :--- |
-| `join` | Client → Server | `{ type: "join", roomId: 1 }` — Joins WebSocket client to room broadcast pool |
-| `draw` | Client → Server | `{ type: "draw", roomId: 1, message: JSON.stringify(shape) }` — Broadcasts shape & persists to DB |
-| `delete_shape` | Client → Server | Broadcasts shape removal (undo action) to room participants |
-| `clear` | Client → Server | Broadcasts canvas clear event to room participants |
-| `draw` | Server → Client | Relays newly drawn shape to all other users connected to the room |
-
----
-
-## 🗂️ Database Schema (`packages/db/prisma/schema.prisma`)
-
-```prisma
-model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  name      String
-  password  String
-  photo     String?
-  rooms     Room[]
-  chats     Chat[]
-  createdAt DateTime @default(now())
-}
-
-model Room {
-  id        Int      @id @default(autoincrement())
-  slug      String   @unique
-  adminId   Int
-  admin     User     @relation(fields: [adminId], references: [id])
-  chats     Chat[]
-  createdAt DateTime @default(now())
-}
-
-model Chat {
-  id        Int      @id @default(autoincrement())
-  message   String
-  roomId    Int
-  userId    Int
-  room      Room     @relation(fields: [roomId], references: [id])
-  user      User     @relation(fields: [userId], references: [id])
-  createdAt DateTime @default(now())
-}
-```
-
----
-
-## 🐳 Docker Deployment
-
-### Local Docker Compose (Development Environment)
-Build and spin up the complete containerized stack:
-```bash
-docker compose up --build
-```
-
-### Production Docker Compose
-Run with production-optimized configuration:
-```bash
-docker compose -f docker-compose.prod.yml up --build -d
-```
+| `join` | Client → Server | `{ type: "join", roomId: "108" }` — Joins client to room broadcast pool |
+| `chat` | Client → Server | `{ type: "chat", roomId: "108", message: JSON.stringify(shape) }` — Broadcasts shape & saves to DB |
+| `user_text_message` | Client → Server | `{ type: "user_text_message", roomId: "108", message: "Hi!", senderName: "Sarthak" }` — Broadcasts room chat message & saves to DB |
+| `delete_shape` | Client → Server | Broadcasts shape deletion to room participants & deletes from DB |
+| `clear_canvas` | Client → Server | Broadcasts canvas clear event to room participants & clears room shapes in DB |
+| `user_text_message` | Server → Client | Relays text chat message with timestamp & sender name to room users |
+| `chat` | Server → Client | Relays newly drawn shape to all other room users |
 
 ---
 
